@@ -1,6 +1,7 @@
 import React, { useContext } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthContext } from './contexts/AuthContext'
+import { LMSProvider } from './contexts/LMSContext'
 import HomePage from './pages/HomePage'
 import RegisterPage from './pages/RegisterPage'
 import PasswordResetPage from './pages/PasswordResetPage'
@@ -26,7 +27,7 @@ function App() {
     '/dashboard',
     '/attendance/daily',
     '/attendance/monthly',
-    '/students', 
+    '/students',
     '/teachers',
     '/lectures',
     '/messages',
@@ -42,54 +43,56 @@ function App() {
   }
 
   return (
-    <Routes>
-      {/* 공개 페이지들 (센차와 동일한 구조) */}
-      <Route path="/" element={<HomePage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/password-reset" element={<PasswordResetPage />} />
-      
-      {/* 로그인 후 관리자 페이지들 */}
-      <Route path="/dashboard" element={
-        <Layout>
-          <DashboardPage />
-        </Layout>
-      } />
-      <Route path="/attendance/daily" element={
-        <Layout>
-          <AttendanceDailyPage />
-        </Layout>
-      } />
-      <Route path="/attendance/monthly" element={
-        <Layout>
-          <AttendanceMonthlyPage />
-        </Layout>
-      } />
-      <Route path="/students" element={
-        <Layout>
-          <StudentPage />
-        </Layout>
-      } />
-      <Route path="/teachers" element={
-        <Layout>
-          <TeacherPage />
-        </Layout>
-      } />
-      <Route path="/lectures" element={
-        <Layout>
-          <LecturePage />
-        </Layout>
-      } />
-      <Route path="/messages" element={
-        <Layout>
-          <MessagePage />
-        </Layout>
-      } />
-      <Route path="/files" element={
-        <Layout>
-          <FilePage />
-        </Layout>
-      } />
-    </Routes>
+    <LMSProvider>
+      <Routes>
+        {/* 공개 페이지들 (센차와 동일한 구조) */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/password-reset" element={<PasswordResetPage />} />
+
+        {/* 로그인 후 관리자 페이지들 */}
+        <Route path="/dashboard" element={
+          <Layout>
+            <DashboardPage />
+          </Layout>
+        } />
+        <Route path="/attendance/daily" element={
+          <Layout>
+            <AttendanceDailyPage />
+          </Layout>
+        } />
+        <Route path="/attendance/monthly" element={
+          <Layout>
+            <AttendanceMonthlyPage />
+          </Layout>
+        } />
+        <Route path="/students" element={
+          <Layout>
+            <StudentPage />
+          </Layout>
+        } />
+        <Route path="/teachers" element={
+          <Layout>
+            <TeacherPage />
+          </Layout>
+        } />
+        <Route path="/lectures" element={
+          <Layout>
+            <LecturePage />
+          </Layout>
+        } />
+        <Route path="/messages" element={
+          <Layout>
+            <MessagePage />
+          </Layout>
+        } />
+        <Route path="/files" element={
+          <Layout>
+            <FilePage />
+          </Layout>
+        } />
+      </Routes>
+    </LMSProvider>
   )
 }
 

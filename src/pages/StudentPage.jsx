@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useLMS } from '../contexts/LMSContext'
 import {
   Box,
   Typography,
@@ -37,12 +38,14 @@ import {
 } from '@mui/icons-material'
 
 const StudentPage = () => {
-  const [students, setStudents] = useState([])
+  const { students, lectures, addStudent, updateStudent, deleteStudent } = useLMS()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedClass, setSelectedClass] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingStudent, setEditingStudent] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [photoDialogOpen, setPhotoDialogOpen] = useState(false)
+  const [cameraStream, setCameraStream] = useState(null)
+  const [showCamera, setShowCamera] = useState(false)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -57,63 +60,31 @@ const StudentPage = () => {
     address: '',
     notes: '',
     // 추가된 필드들
-    selectedClass: '',
+    selectedClasses: [],
     classFee: 0,
     paymentDueDate: '',
     sendPaymentNotification: true,
-    profileImage: null
+    profileImage: null,
+    capturedImage: null,
+    // 자동 메시지 설정
+    autoMessages: {
+      attendance: true,    // 등하원 (기본 체크)
+      outing: false,       // 외출/복귀
+      imagePost: false,    // 이미지포함
+      studyMonitoring: false  // 학습관제
+    }
   })
 
-  // 임시 데이터
-  const mockStudents = [
-    {
-      id: 1,
-      name: '김철수',
-      school: '가온 중학교',
-      grade: '3',
-      department: '수학과',
-      phone: '010-1111-2222',
-      parentPhone: '010-9999-8888',
-      email: 'parent1@example.com',
-      class: '수학 A반',
-      birthDate: '2010-03-15',
-      address: '서울시 강남구',
-      notes: '수학에 관심이 많음',
-      selectedClass: 'math_a',
-      classFee: 150000,
-      paymentDueDate: '2025-01-25',
-      sendPaymentNotification: true,
-      profileImage: null
-    },
-    {
-      id: 2,
-      name: '이영희',
-      school: '가온 고등학교',
-      grade: '1',
-      department: '영어과',
-      phone: '010-2222-3333',
-      parentPhone: '010-8888-7777',
-      email: 'parent2@example.com',
-      class: '영어 B반',
-      birthDate: '2011-07-22',
-      address: '서울시 서초구',
-      notes: '영어 회화 실력 우수',
-      selectedClass: 'english_b',
-      classFee: 110000,
-      paymentDueDate: '2025-01-30',
-      sendPaymentNotification: true,
-      profileImage: null
-    }
-  ]
+  // Context에서 학생 데이터를 가져오므로 mock 데이터 불필요
 
+  // 강의 목록을 Context에서 가져와서 클래스 옵션으로 변환
   const mockClasses = [
     { id: '', name: '전체' },
-    { id: 'math_a', name: '수학 A반', fee: 150000 },
-    { id: 'math_b', name: '수학 B반', fee: 120000 },
-    { id: 'english_a', name: '영어 A반', fee: 130000 },
-    { id: 'english_b', name: '영어 B반', fee: 110000 },
-    { id: 'science', name: '과학 C반', fee: 140000 },
-    { id: 'coding', name: '코딩반', fee: 180000 }
+    ...lectures.map(lecture => ({
+      id: lecture.id,
+      name: lecture.name,
+      fee: lecture.fee
+    }))
   ]
 
   const mockDepartments = [
@@ -155,11 +126,18 @@ const StudentPage = () => {
       birthDate: '',
       address: '',
       notes: '',
-      selectedClass: '',
+      selectedClasses: [],
       classFee: 0,
       paymentDueDate: '',
       sendPaymentNotification: true,
-      profileImage: null
+      profileImage: null,
+      capturedImage: null,
+      autoMessages: {
+        attendance: true,
+        outing: false,
+        imagePost: false,
+        studyMonitoring: false
+      }
     })
   }
 
@@ -189,19 +167,29 @@ const StudentPage = () => {
         [field]: value
       }
 
-      // 강의 선택 시 비용 자동 설정
-      if (field === 'selectedClass') {
-        const selectedClassInfo = mockClasses.find(c => c.id === value)
-        if (selectedClassInfo && selectedClassInfo.fee) {
-          newData.classFee = selectedClassInfo.fee
-          newData.class = selectedClassInfo.name
-        } else {
-          newData.classFee = 0
-        }
+      // 강의 선택 시 비용 자동 설정 (다중 선택)
+      if (field === 'selectedClasses') {
+        const selectedClassesInfo = value.map(classId => mockClasses.find(c => c.id === classId)).filter(Boolean)
+        const totalFee = selectedClassesInfo.reduce((sum, cls) => sum + (cls.fee || 0), 0)
+        const classNames = selectedClassesInfo.map(cls => cls.name).join(', ')
+
+        newData.classFee = totalFee
+        newData.class = classNames
       }
 
       return newData
     })
+  }
+
+  const handleAutoMessageChange = (messageType) => (event) => {
+    const checked = event.target.checked
+    setFormData(prev => ({
+      ...prev,
+      autoMessages: {
+        ...prev.autoMessages,
+        [messageType]: checked
+      }
+    }))
   }
 
   const handleImageUpload = (event) => {
@@ -218,26 +206,70 @@ const StudentPage = () => {
     }
   }
 
+  const handlePhotoOptionClick = () => {
+    setPhotoDialogOpen(true)
+  }
+
+  const handleCameraCapture = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      })
+      setCameraStream(stream)
+      setShowCamera(true)
+      setPhotoDialogOpen(false)
+    } catch (error) {
+      console.error('카메라 접근 오류:', error)
+      alert('카메라에 접근할 수 없습니다. 권한을 확인해주세요.')
+    }
+  }
+
+  const handleFileSelect = () => {
+    document.getElementById('photo-upload').click()
+    setPhotoDialogOpen(false)
+  }
+
+  const capturePhoto = () => {
+    const video = document.getElementById('camera-video')
+    const canvas = document.createElement('canvas')
+    const context = canvas.getContext('2d')
+
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    context.drawImage(video, 0, 0)
+
+    const capturedImageData = canvas.toDataURL('image/jpeg')
+    setFormData(prev => ({
+      ...prev,
+      profileImage: capturedImageData
+    }))
+
+    stopCamera()
+  }
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop())
+      setCameraStream(null)
+    }
+    setShowCamera(false)
+  }
+
   const handleSubmit = async (event) => {
     event.preventDefault()
-    
+
     try {
       if (editingStudent) {
         console.log('학생 수정:', formData)
-        setStudents(prev => prev.map(student => 
-          student.id === editingStudent.id 
-            ? { ...formData, id: editingStudent.id }
-            : student
-        ))
+        updateStudent(editingStudent.id, formData)
       } else {
         console.log('학생 추가:', formData)
-        const newStudent = {
-          ...formData,
-          id: Date.now()
-        }
-        setStudents(prev => [newStudent, ...prev])
+        addStudent(formData)
       }
-      
+
       handleCloseDialog()
     } catch (error) {
       console.error('학생 저장 실패:', error)
@@ -248,7 +280,7 @@ const StudentPage = () => {
     if (window.confirm('정말 삭제하시겠습니까?')) {
       try {
         console.log('학생 삭제:', studentId)
-        setStudents(prev => prev.filter(student => student.id !== studentId))
+        deleteStudent(studentId)
       } catch (error) {
         console.error('학생 삭제 실패:', error)
       }
@@ -335,13 +367,7 @@ const StudentPage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={10} align="center">
-                      데이터를 불러오는 중...
-                    </TableCell>
-                  </TableRow>
-                ) : filteredStudents.length === 0 ? (
+                {filteredStudents.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={10} align="center">
                       학생 데이터가 없습니다.
@@ -499,15 +525,27 @@ const StudentPage = () => {
                   </Grid>
                   <Grid item xs={12}>
                     <FormControl fullWidth>
-                      <InputLabel>강의 선택 *</InputLabel>
+                      <InputLabel>강의 선택 * (다중 선택 가능)</InputLabel>
                       <Select
-                        value={formData.selectedClass}
-                        onChange={handleInputChange('selectedClass')}
-                        label="강의 선택 *"
+                        multiple
+                        value={formData.selectedClasses}
+                        onChange={handleInputChange('selectedClasses')}
+                        label="강의 선택 * (다중 선택 가능)"
                         required
+                        renderValue={(selected) => (
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {selected.map((value) => {
+                              const cls = mockClasses.find(c => c.id === value)
+                              return cls ? (
+                                <Chip key={value} label={cls.name} size="small" />
+                              ) : null
+                            })}
+                          </Box>
+                        )}
                       >
                         {mockClasses.filter(c => c.id !== '').map((cls) => (
                           <MenuItem key={cls.id} value={cls.id}>
+                            <Checkbox checked={formData.selectedClasses.indexOf(cls.id) > -1} />
                             {cls.name} - {cls.fee.toLocaleString()}원
                           </MenuItem>
                         ))}
@@ -516,11 +554,19 @@ const StudentPage = () => {
                   </Grid>
 
                   {/* 선택된 강의 비용 표시 */}
-                  {formData.selectedClass && formData.classFee > 0 && (
+                  {formData.selectedClasses.length > 0 && formData.classFee > 0 && (
                     <Grid item xs={12}>
                       <Alert severity="info">
                         선택된 강의: <strong>{formData.class}</strong><br/>
-                        월 수강료: <strong>{formData.classFee.toLocaleString()}원</strong>
+                        총 월 수강료: <strong>{formData.classFee.toLocaleString()}원</strong>
+                        {formData.selectedClasses.length > 1 && (
+                          <>
+                            <br/>
+                            <Typography variant="caption" color="text.secondary">
+                              {formData.selectedClasses.length}개 강의 선택됨
+                            </Typography>
+                          </>
+                        )}
                       </Alert>
                     </Grid>
                   )}
@@ -569,6 +615,78 @@ const StudentPage = () => {
                       }
                       label="결제 안내 문자 발송 (결제 기한일 전에 알림 문자를 발송합니다)"
                     />
+                  </Grid>
+
+                  {/* 자동 메시지 설정 섹션 */}
+                  <Grid item xs={12}>
+                    <Divider sx={{ my: 2 }}>
+                      <Typography variant="h6" color="primary">
+                        자동 메시지 설정
+                      </Typography>
+                    </Divider>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      자동으로 발송할 메시지 유형을 선택해주세요.
+                    </Typography>
+
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={4}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.autoMessages.attendance}
+                              onChange={handleAutoMessageChange('attendance')}
+                              color="primary"
+                            />
+                          }
+                          label="📚 등하원"
+                        />
+                      </Grid>
+
+                      <Grid item xs={12} sm={4}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.autoMessages.outing}
+                              onChange={handleAutoMessageChange('outing')}
+                              color="primary"
+                            />
+                          }
+                          label="🚶 외출/복귀"
+                        />
+                      </Grid>
+
+                      <Grid item xs={12} sm={4}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.autoMessages.imagePost}
+                              onChange={handleAutoMessageChange('imagePost')}
+                              color="primary"
+                            />
+                          }
+                          label="📷 이미지포함"
+                        />
+                      </Grid>
+                    </Grid>
+
+                    {/* 학습관제 섹션 */}
+                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                      <Grid item xs={12}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.autoMessages.studyMonitoring}
+                              onChange={handleAutoMessageChange('studyMonitoring')}
+                              color="primary"
+                            />
+                          }
+                          label="📊 학습관제 대상"
+                        />
+                      </Grid>
+                    </Grid>
                   </Grid>
 
                   <Grid item xs={12} sm={6}>
@@ -627,7 +745,7 @@ const StudentPage = () => {
                         borderColor: '#1976d2'
                       }
                     }}
-                    onClick={() => document.getElementById('photo-upload').click()}
+                    onClick={handlePhotoOptionClick}
                   >
                     {formData.profileImage ? (
                       <img
@@ -646,13 +764,9 @@ const StudentPage = () => {
                           <Typography variant="h4">📷</Typography>
                         </Avatar>
                         <Typography variant="body2" color="text.secondary">
-                          학생 사진을 등록할수 있게<br/>
-                          만들어 주고 사진 아이콘을<br/>
-                          선택하면 카메라 활성화 또는<br/>
-                          이미지 업로드 선택하여 진행 할수 있게 수정
-                        </Typography>
-                        <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
-                          복수로 선택할수 있게 수정
+                          클릭하여 사진을 등록하세요<br/>
+                          카메라 촬영 또는<br/>
+                          파일에서 선택 가능
                         </Typography>
                       </>
                     )}
@@ -666,7 +780,7 @@ const StudentPage = () => {
                   />
                   <Button
                     variant="outlined"
-                    onClick={() => document.getElementById('photo-upload').click()}
+                    onClick={handlePhotoOptionClick}
                     sx={{ mb: 1 }}
                   >
                     사진 선택
@@ -693,11 +807,90 @@ const StudentPage = () => {
           <Button
             onClick={handleSubmit}
             variant="contained"
-            disabled={!formData.name || !formData.parentPhone || !formData.selectedClass || !formData.paymentDueDate}
+            disabled={!formData.name || !formData.parentPhone || formData.selectedClasses.length === 0 || !formData.paymentDueDate}
           >
             {editingStudent ? '수정' : '추가'}
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* 사진 선택 옵션 다이얼로그 */}
+      <Dialog open={photoDialogOpen} onClose={() => setPhotoDialogOpen(false)}>
+        <DialogTitle>사진 선택 방법</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            학생 사진을 등록할 방법을 선택해주세요.
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Button
+              variant="outlined"
+              startIcon={<Typography>📷</Typography>}
+              onClick={handleCameraCapture}
+              sx={{ p: 2, justifyContent: 'flex-start' }}
+            >
+              카메라로 촬영하기
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Typography>📁</Typography>}
+              onClick={handleFileSelect}
+              sx={{ p: 2, justifyContent: 'flex-start' }}
+            >
+              파일에서 선택하기
+            </Button>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPhotoDialogOpen(false)}>취소</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 카메라 촬영 다이얼로그 */}
+      <Dialog
+        open={showCamera}
+        onClose={stopCamera}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>카메라로 사진 촬영</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <video
+              id="camera-video"
+              autoPlay
+              playsInline
+              muted
+              ref={(video) => {
+                if (video && cameraStream) {
+                  video.srcObject = cameraStream
+                }
+              }}
+              style={{
+                width: '100%',
+                maxWidth: '500px',
+                height: 'auto',
+                borderRadius: '8px',
+                border: '2px solid #ccc'
+              }}
+            />
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={capturePhoto}
+                startIcon={<Typography>📸</Typography>}
+              >
+                사진 촬영
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={stopCamera}
+              >
+                취소
+              </Button>
+            </Box>
+          </Box>
+        </DialogContent>
       </Dialog>
     </Box>
   )

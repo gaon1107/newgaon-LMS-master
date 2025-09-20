@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useLMS } from '../contexts/LMSContext'
 import {
   Box,
   Typography,
@@ -22,7 +23,9 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Chip
+  Chip,
+  Checkbox,
+  ListItemText
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -33,7 +36,7 @@ import {
 } from '@mui/icons-material'
 
 const LecturePage = () => {
-  const [lectures, setLectures] = useState([])
+  const { lectures, students, addLecture, updateLecture, deleteLecture, updateStudent } = useLMS()
   const [searchTerm, setSearchTerm] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingLecture, setEditingLecture] = useState(null)
@@ -44,58 +47,20 @@ const LecturePage = () => {
     teacher: '',
     subject: '',
     schedule: '',
-    room: '',
+    fee: '',
     capacity: '',
     currentStudents: '0',
     description: ''
   })
 
-  // 임시 데이터
-  const mockLectures = [
-    {
-      id: 1,
-      name: '중학 수학 A반',
-      teacher: '박선생',
-      subject: '수학',
-      schedule: '월,수,금 19:00-20:30',
-      room: '201호',
-      capacity: 20,
-      currentStudents: 15,
-      description: '중학교 1-2학년 대상 기초 수학'
-    },
-    {
-      id: 2,
-      name: '고등 영어 B반',
-      teacher: '김선생',
-      subject: '영어',
-      schedule: '화,목 20:00-21:30',
-      room: '301호',
-      capacity: 15,
-      currentStudents: 12,
-      description: '고등학교 영어 문법 및 독해'
-    }
-  ]
+  const [selectedStudents, setSelectedStudents] = useState([])
+
+  // Context에서 강의 데이터를 가져오므로 mock 데이터 불필요
 
   const mockTeachers = ['박선생', '김선생', '이선생']
   const mockSubjects = ['수학', '영어', '과학', '국어', '사회']
-  const mockRooms = ['201호', '301호', '401호', '501호']
 
-  useEffect(() => {
-    loadLectures()
-  }, [])
-
-  const loadLectures = async () => {
-    setLoading(true)
-    try {
-      setTimeout(() => {
-        setLectures(mockLectures)
-        setLoading(false)
-      }, 500)
-    } catch (error) {
-      console.error('강의 데이터 로딩 실패:', error)
-      setLoading(false)
-    }
-  }
+  // Context에서 강의 데이터를 가져오므로 별도 로딩 불필요
 
   const resetForm = () => {
     setFormData({
@@ -103,11 +68,12 @@ const LecturePage = () => {
       teacher: '',
       subject: '',
       schedule: '',
-      room: '',
+      fee: '',
       capacity: '',
       currentStudents: '0',
       description: ''
     })
+    setSelectedStudents([])
   }
 
   const handleOpenDialog = (lecture = null) => {
@@ -116,8 +82,12 @@ const LecturePage = () => {
       setFormData({
         ...lecture,
         capacity: lecture.capacity.toString(),
-        currentStudents: lecture.currentStudents.toString()
+        currentStudents: lecture.currentStudents.toString(),
+        fee: lecture.fee ? lecture.fee.toString() : ''
       })
+      // 현재 강의에 등록된 학생들을 선택된 학생 목록으로 설정
+      const enrolledStudents = getStudentsForLecture(lecture.id)
+      setSelectedStudents(enrolledStudents.map(student => student.id))
     } else {
       setEditingLecture(null)
       resetForm()
@@ -140,30 +110,60 @@ const LecturePage = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-    
+
     try {
       const lectureData = {
         ...formData,
         capacity: parseInt(formData.capacity),
-        currentStudents: parseInt(formData.currentStudents)
+        currentStudents: parseInt(formData.currentStudents),
+        fee: parseInt(formData.fee)
       }
 
       if (editingLecture) {
         console.log('강의 수정:', lectureData)
-        setLectures(prev => prev.map(lecture => 
-          lecture.id === editingLecture.id 
-            ? { ...lectureData, id: editingLecture.id }
-            : lecture
-        ))
+        updateLecture(editingLecture.id, lectureData)
+
+        // 학생 등록 정보 업데이트
+        students.forEach(student => {
+          const currentlyEnrolled = student.selectedClasses && student.selectedClasses.includes(editingLecture.id)
+          const shouldBeEnrolled = selectedStudents.includes(student.id)
+
+          if (currentlyEnrolled !== shouldBeEnrolled) {
+            let updatedClasses = student.selectedClasses || []
+
+            if (shouldBeEnrolled) {
+              // 학생을 강의에 추가
+              updatedClasses = [...updatedClasses, editingLecture.id]
+            } else {
+              // 학생을 강의에서 제거
+              updatedClasses = updatedClasses.filter(classId => classId !== editingLecture.id)
+            }
+
+            updateStudent(student.id, {
+              ...student,
+              selectedClasses: updatedClasses
+            })
+          }
+        })
       } else {
         console.log('강의 추가:', lectureData)
-        const newLecture = {
-          ...lectureData,
-          id: Date.now()
+        const newLecture = addLecture(lectureData)
+
+        // 새 강의에 선택된 학생들 등록
+        if (selectedStudents.length > 0) {
+          selectedStudents.forEach(studentId => {
+            const student = students.find(s => s.id === studentId)
+            if (student) {
+              const updatedClasses = student.selectedClasses || []
+              updateStudent(studentId, {
+                ...student,
+                selectedClasses: [...updatedClasses, newLecture.id]
+              })
+            }
+          })
         }
-        setLectures(prev => [newLecture, ...prev])
       }
-      
+
       handleCloseDialog()
     } catch (error) {
       console.error('강의 저장 실패:', error)
@@ -174,7 +174,7 @@ const LecturePage = () => {
     if (window.confirm('정말 삭제하시겠습니까?')) {
       try {
         console.log('강의 삭제:', lectureId)
-        setLectures(prev => prev.filter(lecture => lecture.id !== lectureId))
+        deleteLecture(lectureId)
       } catch (error) {
         console.error('강의 삭제 실패:', error)
       }
@@ -186,6 +186,14 @@ const LecturePage = () => {
     lecture.teacher.toLowerCase().includes(searchTerm.toLowerCase()) ||
     lecture.subject.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  const getStudentsForLecture = (lectureId) => {
+    return students.filter(student =>
+      student.selectedClasses &&
+      Array.isArray(student.selectedClasses) &&
+      student.selectedClasses.includes(lectureId)
+    )
+  }
 
   const getCapacityChip = (current, capacity) => {
     const ratio = current / capacity
@@ -252,21 +260,22 @@ const LecturePage = () => {
                   <TableCell>담당 강사</TableCell>
                   <TableCell>과목</TableCell>
                   <TableCell>스케줄</TableCell>
-                  <TableCell>강의실</TableCell>
+                  <TableCell>비용</TableCell>
                   <TableCell>수강 인원</TableCell>
+                  <TableCell>수강생</TableCell>
                   <TableCell>관리</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">
+                    <TableCell colSpan={8} align="center">
                       데이터를 불러오는 중...
                     </TableCell>
                   </TableRow>
                 ) : filteredLectures.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">
+                    <TableCell colSpan={8} align="center">
                       강의 데이터가 없습니다.
                     </TableCell>
                   </TableRow>
@@ -284,9 +293,26 @@ const LecturePage = () => {
                           {lecture.schedule}
                         </Box>
                       </TableCell>
-                      <TableCell>{lecture.room}</TableCell>
+                      <TableCell>{lecture.fee ? `${lecture.fee.toLocaleString()}원` : '-'}</TableCell>
                       <TableCell>
                         {getCapacityChip(lecture.currentStudents, lecture.capacity)}
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {getStudentsForLecture(lecture.id).map((student) => (
+                            <Chip
+                              key={student.id}
+                              label={student.name}
+                              size="small"
+                              variant="outlined"
+                            />
+                          ))}
+                          {getStudentsForLecture(lecture.id).length === 0 && (
+                            <Typography variant="body2" color="text.secondary">
+                              수강생 없음
+                            </Typography>
+                          )}
+                        </Box>
                       </TableCell>
                       <TableCell>
                         <IconButton
@@ -363,20 +389,18 @@ const LecturePage = () => {
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>강의실</InputLabel>
-                  <Select
-                    value={formData.room}
-                    onChange={handleInputChange('room')}
-                    label="강의실"
-                  >
-                    {mockRooms.map((room) => (
-                      <MenuItem key={room} value={room}>
-                        {room}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <TextField
+                  fullWidth
+                  label="비용 (월 수강료) *"
+                  type="number"
+                  value={formData.fee}
+                  onChange={handleInputChange('fee')}
+                  InputProps={{
+                    endAdornment: '원'
+                  }}
+                  helperText="월 수강료를 입력하세요"
+                  required
+                />
               </Grid>
               <Grid item xs={12}>
                 <TextField
@@ -410,6 +434,34 @@ const LecturePage = () => {
                 />
               </Grid>
               <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>수강생 선택</InputLabel>
+                  <Select
+                    multiple
+                    value={selectedStudents}
+                    onChange={(event) => setSelectedStudents(event.target.value)}
+                    label="수강생 선택"
+                    renderValue={(selected) => (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {selected.map((studentId) => {
+                          const student = students.find(s => s.id === studentId)
+                          return student ? (
+                            <Chip key={studentId} label={student.name} size="small" />
+                          ) : null
+                        })}
+                      </Box>
+                    )}
+                  >
+                    {students.map((student) => (
+                      <MenuItem key={student.id} value={student.id}>
+                        <Checkbox checked={selectedStudents.includes(student.id)} />
+                        <ListItemText primary={`${student.name} (${student.school} ${student.grade}학년)`} />
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12}>
                 <TextField
                   fullWidth
                   label="강의 설명"
@@ -429,7 +481,7 @@ const LecturePage = () => {
           <Button 
             onClick={handleSubmit} 
             variant="contained"
-            disabled={!formData.name || !formData.teacher || !formData.subject || !formData.schedule || !formData.capacity}
+            disabled={!formData.name || !formData.teacher || !formData.subject || !formData.schedule || !formData.capacity || !formData.fee}
           >
             {editingLecture ? '수정' : '추가'}
           </Button>
