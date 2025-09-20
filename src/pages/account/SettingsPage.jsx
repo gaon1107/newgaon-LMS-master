@@ -269,7 +269,7 @@ const SettingsPage = () => {
                       borderColor: 'primary.main',
                       position: 'relative',
                       mt: 2,
-                      height: 200,
+                      height: 240,
                       display: 'flex',
                       flexDirection: 'column',
                       '&:hover': {
@@ -280,7 +280,7 @@ const SettingsPage = () => {
                     <Box
                       sx={{
                         position: 'absolute',
-                        top: -6,
+                        top: 8,
                         left: 12,
                         bgcolor: 'primary.main',
                         color: 'white',
@@ -293,12 +293,22 @@ const SettingsPage = () => {
                     >
                       STEP 1
                     </Box>
-                    <CardContent sx={{ pt: 2, pb: 2, flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <CardContent sx={{ 
+                      pt: 4, 
+                      pb: 3, 
+                      px: 3, 
+                      flexGrow: 1, 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      textAlign: 'center'
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                         <Box
                           sx={{
-                            width: 32,
-                            height: 32,
+                            width: 36,
+                            height: 36,
                             borderRadius: '50%',
                             bgcolor: 'primary.main',
                             display: 'flex',
@@ -307,11 +317,11 @@ const SettingsPage = () => {
                             mr: 1.5
                           }}
                         >
-                          <Typography variant="body1" color="white" sx={{ fontWeight: 'bold' }}>
+                          <Typography variant="h6" color="white" sx={{ fontWeight: 'bold' }}>
                             1
                           </Typography>
                         </Box>
-                        <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: '0.95rem' }}>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
                           서비스 충전하기
                         </Typography>
                       </Box>
@@ -320,10 +330,9 @@ const SettingsPage = () => {
                         variant="body2"
                         color="text.secondary"
                         sx={{
-                          mb: 2,
-                          fontSize: '0.8rem',
-                          lineHeight: 1.3,
-                          textAlign: 'center'
+                          mb: 3,
+                          fontSize: '0.9rem',
+                          lineHeight: 1.5
                         }}
                       >
                         문자 발송을 위한 서비스 비용을 충전합니다.
@@ -334,8 +343,8 @@ const SettingsPage = () => {
                         startIcon={<LaunchIcon />}
                         onClick={handleSmsCharge}
                         fullWidth
-                        size="small"
-                        sx={{ fontSize: '0.8rem' }}
+                        size="large"
+                        sx={{ fontSize: '0.9rem', py: 1.2 }}
                       >
                         문자 서비스 충전
                       </Button>
@@ -351,7 +360,7 @@ const SettingsPage = () => {
                       borderColor: 'warning.main',
                       position: 'relative',
                       mt: 2,
-                      height: 200,
+                      height: 240,
                       display: 'flex',
                       flexDirection: 'column',
                       '&:hover': {
@@ -362,7 +371,7 @@ const SettingsPage = () => {
                     <Box
                       sx={{
                         position: 'absolute',
-                        top: -6,
+                        top: 8,
                         left: 12,
                         bgcolor: 'warning.main',
                         color: 'white',
@@ -375,12 +384,22 @@ const SettingsPage = () => {
                     >
                       STEP 2
                     </Box>
-                    <CardContent sx={{ pt: 2, pb: 2, flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <CardContent sx={{ 
+                      pt: 4, 
+                      pb: 3, 
+                      px: 3, 
+                      flexGrow: 1, 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      textAlign: 'center'
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                         <Box
                           sx={{
-                            width: 32,
-                            height: 32,
+                            width: 36,
+                            height: 36,
                             borderRadius: '50%',
                             bgcolor: 'warning.main',
                             display: 'flex',
@@ -389,11 +408,11 @@ const SettingsPage = () => {
                             mr: 1.5
                           }}
                         >
-                          <Typography variant="body1" color="white" sx={{ fontWeight: 'bold' }}>
+                          <Typography variant="h6" color="white" sx={{ fontWeight: 'bold' }}>
                             2
                           </Typography>
                         </Box>
-                        <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: '0.95rem' }}>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
                           발신번호 인증하기
                         </Typography>
                       </Box>
@@ -402,10 +421,9 @@ const SettingsPage = () => {
                         variant="body2"
                         color="text.secondary"
                         sx={{
-                          mb: 2,
-                          fontSize: '0.8rem',
-                          lineHeight: 1.3,
-                          textAlign: 'center'
+                          mb: 3,
+                          fontSize: '0.9rem',
+                          lineHeight: 1.5
                         }}
                       >
                         문자 발송에 사용할 전화번호를 인증합니다.
@@ -417,8 +435,8 @@ const SettingsPage = () => {
                         startIcon={<LaunchIcon />}
                         onClick={handleSmsAuth}
                         fullWidth
-                        size="small"
-                        sx={{ fontSize: '0.8rem' }}
+                        size="large"
+                        sx={{ fontSize: '0.9rem', py: 1.2 }}
                       >
                         발신 번호 인증
                       </Button>
@@ -434,7 +452,7 @@ const SettingsPage = () => {
                       borderColor: 'success.main',
                       position: 'relative',
                       mt: 2,
-                      height: 200,
+                      height: 240,
                       display: 'flex',
                       flexDirection: 'column',
                       '&:hover': {
@@ -445,7 +463,7 @@ const SettingsPage = () => {
                     <Box
                       sx={{
                         position: 'absolute',
-                        top: -6,
+                        top: 8,
                         left: 12,
                         bgcolor: 'success.main',
                         color: 'white',
@@ -458,12 +476,22 @@ const SettingsPage = () => {
                     >
                       STEP 3
                     </Box>
-                    <CardContent sx={{ pt: 2, pb: 2, flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <CardContent sx={{ 
+                      pt: 4, 
+                      pb: 3, 
+                      px: 3, 
+                      flexGrow: 1, 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      textAlign: 'center'
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                         <Box
                           sx={{
-                            width: 32,
-                            height: 32,
+                            width: 36,
+                            height: 36,
                             borderRadius: '50%',
                             bgcolor: 'success.main',
                             display: 'flex',
@@ -472,11 +500,11 @@ const SettingsPage = () => {
                             mr: 1.5
                           }}
                         >
-                          <Typography variant="body1" color="white" sx={{ fontWeight: 'bold' }}>
+                          <Typography variant="h6" color="white" sx={{ fontWeight: 'bold' }}>
                             3
                           </Typography>
                         </Box>
-                        <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: '0.95rem' }}>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
                           발신번호 입력하기
                         </Typography>
                       </Box>
@@ -485,10 +513,9 @@ const SettingsPage = () => {
                         variant="body2"
                         color="text.secondary"
                         sx={{
-                          mb: 2,
-                          fontSize: '0.8rem',
-                          lineHeight: 1.3,
-                          textAlign: 'center'
+                          mb: 3,
+                          fontSize: '0.9rem',
+                          lineHeight: 1.5
                         }}
                       >
                         인증받은 전화번호를 입력하세요.
@@ -500,16 +527,16 @@ const SettingsPage = () => {
                         value={settings.smsPhone}
                         onChange={handleSettingChange('smsPhone')}
                         placeholder="010-1234-5678"
-                        size="small"
+                        size="medium"
                         inputProps={{
                           pattern: '^\\d{3}-\\d{3,4}-\\d{4}$'
                         }}
                         sx={{
                           '& .MuiInputLabel-root': {
-                            fontSize: '0.8rem'
+                            fontSize: '0.9rem'
                           },
                           '& .MuiOutlinedInput-root': {
-                            fontSize: '0.8rem',
+                            fontSize: '0.9rem',
                             '&.Mui-focused fieldset': {
                               borderColor: 'success.main'
                             }
