@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useLMS } from '../contexts/LMSContext'
 import {
   Box,
   Typography,
@@ -24,15 +25,24 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  IconButton,
+  Divider
 } from '@mui/material'
 import {
   Send as SendIcon,
   History as HistoryIcon,
-  People as PeopleIcon
+  People as PeopleIcon,
+  Template as TemplateIcon,
+  Payment as PaymentIcon,
+  School as SchoolIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Add as AddIcon
 } from '@mui/icons-material'
 
 const MessagePage = () => {
+  const { students, lectures } = useLMS()
   const [tabValue, setTabValue] = useState(0)
   const [recipients, setRecipients] = useState('all')
   const [messageContent, setMessageContent] = useState('')
@@ -41,8 +51,49 @@ const MessagePage = () => {
   const [loading, setLoading] = useState(false)
   const [previewDialog, setPreviewDialog] = useState({ open: false, data: null })
 
-  // 임시 데이터
-  const mockStudents = [
+  // 메세지 템플릿 관리
+  const [messageTemplates, setMessageTemplates] = useState([])
+  const [templateDialog, setTemplateDialog] = useState({ open: false, editing: null })
+  const [selectedTemplate, setSelectedTemplate] = useState('')
+  const [templateForm, setTemplateForm] = useState({
+    name: '',
+    type: '',
+    template: '',
+    description: ''
+  })
+
+  // 기본 메세지 템플릿
+  const defaultTemplates = [
+    {
+      id: 'payment_request',
+      name: '결제 요청 메세지',
+      type: 'payment',
+      template: '안녕하세요. [학생명] 학생의 [강의명] 수강료 [비용]원 결제를 요청드립니다. 납부 기한: [납부기한]',
+      description: '월 수강료 결제 요청 시 사용'
+    },
+    {
+      id: 'attendance_in',
+      name: '등원 알림 메세지',
+      type: 'attendance',
+      template: '[학생명] 학생이 [시간]에 등원하였습니다.',
+      description: '학생 등원 시 자동 발송'
+    },
+    {
+      id: 'attendance_out',
+      name: '하원 알림 메세지',
+      type: 'attendance',
+      template: '[학생명] 학생이 [시간]에 하원하였습니다.',
+      description: '학생 하원 시 자동 발송'
+    }
+  ]
+
+  // 임시 학생 데이터 (Context에서 가져온 데이터로 대체 예정)
+  const mockStudents = students.length > 0 ? students.map(student => ({
+    id: student.id,
+    name: student.name,
+    class: student.class || '미배정',
+    parentPhone: student.parentPhone
+  })) : [
     { id: 1, name: '김철수', class: '수학 A반', parentPhone: '010-1111-2222' },
     { id: 2, name: '이영희', class: '영어 B반', parentPhone: '010-3333-4444' },
     { id: 3, name: '박민수', class: '과학 C반', parentPhone: '010-5555-6666' }
@@ -73,12 +124,68 @@ const MessagePage = () => {
 
   useEffect(() => {
     loadMessageHistory()
+    loadMessageTemplates()
     // 초기에 전체 학생 선택
     setSelectedStudents(mockStudents)
   }, [])
 
+  useEffect(() => {
+    // 학생 데이터가 변경되면 selectedStudents 업데이트
+    if (recipients === 'all') {
+      setSelectedStudents(mockStudents)
+    }
+  }, [students])
+
   const loadMessageHistory = () => {
     setMessageHistory(mockMessageHistory)
+  }
+
+  const loadMessageTemplates = () => {
+    try {
+      const savedTemplates = localStorage.getItem('lms_message_templates')
+      if (savedTemplates) {
+        const parsed = JSON.parse(savedTemplates)
+        setMessageTemplates([...defaultTemplates, ...parsed])
+      } else {
+        setMessageTemplates(defaultTemplates)
+      }
+    } catch (error) {
+      console.error('템플릿 로딩 실패:', error)
+      setMessageTemplates(defaultTemplates)
+    }
+  }
+
+  const saveMessageTemplates = (templates) => {
+    try {
+      const customTemplates = templates.filter(t => !defaultTemplates.find(dt => dt.id === t.id))
+      localStorage.setItem('lms_message_templates', JSON.stringify(customTemplates))
+    } catch (error) {
+      console.error('템플릿 저장 실패:', error)
+    }
+  }
+
+  // 템플릿에서 실제 데이터로 치환하는 함수
+  const generateMessageFromTemplate = (template, student, options = {}) => {
+    let message = template.template
+
+    // 공통 치환
+    message = message.replace(/\[학생명\]/g, student.name)
+    message = message.replace(/\[시간\]/g, options.time || new Date().toLocaleTimeString())
+
+    // 결제 관련 치환
+    if (template.type === 'payment') {
+      const studentLectures = lectures.filter(lecture =>
+        student.selectedClasses && student.selectedClasses.includes(lecture.id)
+      )
+      const lectureNames = studentLectures.map(l => l.name).join(', ')
+      const totalFee = studentLectures.reduce((sum, l) => sum + (l.fee || 0), 0)
+
+      message = message.replace(/\[강의명\]/g, lectureNames || '미배정')
+      message = message.replace(/\[비용\]/g, totalFee.toLocaleString())
+      message = message.replace(/\[납부기한\]/g, options.dueDate || '매월 25일')
+    }
+
+    return message
   }
 
   // 메시지 길이에 따른 타입 및 비용 계산
@@ -109,6 +216,81 @@ const MessagePage = () => {
       setSelectedStudents(mockStudents)
     } else {
       setSelectedStudents([])
+    }
+  }
+
+  // 템플릿 선택 처리
+  const handleTemplateSelect = (templateId) => {
+    const template = messageTemplates.find(t => t.id === templateId)
+    if (template) {
+      setSelectedTemplate(templateId)
+      if (selectedStudents.length === 1) {
+        // 단일 학생 선택 시 템플릿에 데이터 적용
+        const generatedMessage = generateMessageFromTemplate(template, selectedStudents[0])
+        setMessageContent(generatedMessage)
+      } else {
+        // 다중 선택 시 템플릿 원본 표시
+        setMessageContent(template.template)
+      }
+    }
+  }
+
+  // 템플릿 관리 함수들
+  const handleTemplateDialogOpen = (template = null) => {
+    if (template) {
+      setTemplateForm({
+        name: template.name,
+        type: template.type,
+        template: template.template,
+        description: template.description
+      })
+      setTemplateDialog({ open: true, editing: template })
+    } else {
+      setTemplateForm({
+        name: '',
+        type: '',
+        template: '',
+        description: ''
+      })
+      setTemplateDialog({ open: true, editing: null })
+    }
+  }
+
+  const handleTemplateDialogClose = () => {
+    setTemplateDialog({ open: false, editing: null })
+    setTemplateForm({
+      name: '',
+      type: '',
+      template: '',
+      description: ''
+    })
+  }
+
+  const handleTemplateSubmit = () => {
+    const newTemplate = {
+      id: templateDialog.editing ? templateDialog.editing.id : `custom_${Date.now()}`,
+      ...templateForm
+    }
+
+    let updatedTemplates
+    if (templateDialog.editing) {
+      updatedTemplates = messageTemplates.map(t =>
+        t.id === templateDialog.editing.id ? newTemplate : t
+      )
+    } else {
+      updatedTemplates = [...messageTemplates, newTemplate]
+    }
+
+    setMessageTemplates(updatedTemplates)
+    saveMessageTemplates(updatedTemplates)
+    handleTemplateDialogClose()
+  }
+
+  const handleTemplateDelete = (templateId) => {
+    if (window.confirm('정말 삭제하시겠습니까?')) {
+      const updatedTemplates = messageTemplates.filter(t => t.id !== templateId)
+      setMessageTemplates(updatedTemplates)
+      saveMessageTemplates(updatedTemplates)
     }
   }
 
@@ -185,6 +367,7 @@ const MessagePage = () => {
       <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)} sx={{ mb: 3 }}>
         <Tab icon={<SendIcon />} label="메시지 발송" />
         <Tab icon={<HistoryIcon />} label="발송 기록" />
+        <Tab icon={<TemplateIcon />} label="템플릿 관리" />
       </Tabs>
 
       {/* 메시지 발송 탭 */}
@@ -196,7 +379,32 @@ const MessagePage = () => {
                 <Typography variant="h6" gutterBottom>
                   메시지 작성
                 </Typography>
-                
+
+                {/* 템플릿 선택 */}
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                  <Grid item xs={12}>
+                    <FormControl fullWidth>
+                      <InputLabel>메시지 템플릿 선택 (선택사항)</InputLabel>
+                      <Select
+                        value={selectedTemplate}
+                        onChange={(e) => handleTemplateSelect(e.target.value)}
+                        label="메시지 템플릿 선택 (선택사항)"
+                      >
+                        <MenuItem value="">직접 작성</MenuItem>
+                        <Divider />
+                        {messageTemplates.map((template) => (
+                          <MenuItem key={template.id} value={template.id}>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              {template.type === 'payment' ? <PaymentIcon sx={{ mr: 1 }} /> : <SchoolIcon sx={{ mr: 1 }} />}
+                              {template.name}
+                            </Box>
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+
                 {/* 수신자 선택 */}
                 <Grid container spacing={2} sx={{ mb: 3 }}>
                   <Grid item xs={12} sm={6}>
@@ -399,6 +607,107 @@ const MessagePage = () => {
         </Card>
       )}
 
+      {/* 템플릿 관리 탭 */}
+      {tabValue === 2 && (
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  <Typography variant="h6">
+                    메시지 템플릿 관리
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => handleTemplateDialogOpen()}
+                  >
+                    새 템플릿 추가
+                  </Button>
+                </Box>
+
+                <Grid container spacing={2}>
+                  {messageTemplates.map((template) => (
+                    <Grid item xs={12} md={6} key={template.id}>
+                      <Card variant="outlined">
+                        <CardContent>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              {template.type === 'payment' ? (
+                                <PaymentIcon color="primary" sx={{ mr: 1 }} />
+                              ) : (
+                                <SchoolIcon color="secondary" sx={{ mr: 1 }} />
+                              )}
+                              <Typography variant="h6">
+                                {template.name}
+                              </Typography>
+                            </Box>
+                            <Box>
+                              {!defaultTemplates.find(dt => dt.id === template.id) && (
+                                <>
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => handleTemplateDialogOpen(template)}
+                                    sx={{ mr: 1 }}
+                                  >
+                                    <EditIcon />
+                                  </IconButton>
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    onClick={() => handleTemplateDelete(template.id)}
+                                  >
+                                    <DeleteIcon />
+                                  </IconButton>
+                                </>
+                              )}
+                            </Box>
+                          </Box>
+
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            {template.description}
+                          </Typography>
+
+                          <Box sx={{ bgcolor: 'grey.100', p: 2, borderRadius: 1 }}>
+                            <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                              {template.template}
+                            </Typography>
+                          </Box>
+
+                          <Box sx={{ mt: 2 }}>
+                            <Chip
+                              label={template.type === 'payment' ? '결제 관련' : '등하원 관련'}
+                              color={template.type === 'payment' ? 'primary' : 'secondary'}
+                              size="small"
+                            />
+                            {defaultTemplates.find(dt => dt.id === template.id) && (
+                              <Chip
+                                label="기본 템플릿"
+                                color="default"
+                                size="small"
+                                sx={{ ml: 1 }}
+                              />
+                            )}
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+
+                {messageTemplates.length === 0 && (
+                  <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <Typography variant="body1" color="text.secondary">
+                      등록된 템플릿이 없습니다.
+                    </Typography>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
+
       {/* 발송 확인 다이얼로그 */}
       <Dialog 
         open={previewDialog.open} 
@@ -447,6 +756,102 @@ const MessagePage = () => {
             disabled={loading}
           >
             {loading ? '발송 중...' : '발송하기'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 템플릿 편집 다이얼로그 */}
+      <Dialog
+        open={templateDialog.open}
+        onClose={handleTemplateDialogClose}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          {templateDialog.editing ? '템플릿 수정' : '새 템플릿 추가'}
+        </DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="템플릿 이름 *"
+                value={templateForm.name}
+                onChange={(e) => setTemplateForm(prev => ({ ...prev, name: e.target.value }))}
+                required
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth required>
+                <InputLabel>템플릿 유형 *</InputLabel>
+                <Select
+                  value={templateForm.type}
+                  onChange={(e) => setTemplateForm(prev => ({ ...prev, type: e.target.value }))}
+                  label="템플릿 유형 *"
+                >
+                  <MenuItem value="payment">결제 관련</MenuItem>
+                  <MenuItem value="attendance">등하원 관련</MenuItem>
+                  <MenuItem value="general">일반</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="템플릿 내용 *"
+                multiline
+                rows={6}
+                value={templateForm.template}
+                onChange={(e) => setTemplateForm(prev => ({ ...prev, template: e.target.value }))}
+                helperText="사용 가능한 변수: [학생명], [시간], [강의명], [비용], [납부기한]"
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="설명"
+                multiline
+                rows={2}
+                value={templateForm.description}
+                onChange={(e) => setTemplateForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="이 템플릿의 용도를 설명해주세요"
+              />
+            </Grid>
+          </Grid>
+
+          {/* 변수 설명 */}
+          <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+            <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+              📝 템플릿 변수 안내
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              • <code>[학생명]</code> - 학생 이름으로 자동 치환
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              • <code>[시간]</code> - 현재 시간으로 자동 치환
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              • <code>[강의명]</code> - 학생이 수강 중인 강의명 (결제 관련 템플릿)
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              • <code>[비용]</code> - 총 수강료 (결제 관련 템플릿)
+            </Typography>
+            <Typography variant="body2">
+              • <code>[납부기한]</code> - 결제 마감일 (결제 관련 템플릿)
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleTemplateDialogClose}>
+            취소
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleTemplateSubmit}
+            disabled={!templateForm.name || !templateForm.type || !templateForm.template}
+          >
+            {templateDialog.editing ? '수정' : '추가'}
           </Button>
         </DialogActions>
       </Dialog>
