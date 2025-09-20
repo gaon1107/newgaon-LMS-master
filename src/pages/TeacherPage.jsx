@@ -278,7 +278,17 @@ const TeacherPage = () => {
       </Card>
 
       {/* 강사 추가/수정 다이얼로그 */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+      <Dialog
+        open={dialogOpen}
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+            handleCloseDialog()
+          }
+        }}
+        disableEscapeKeyDown
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>
           {editingTeacher ? '강사 정보 수정' : '새 강사 추가'}
         </DialogTitle>

@@ -33,7 +33,11 @@ import {
   ExpandLess,
   ExpandMore,
   Today as TodayIcon,
-  CalendarMonth as CalendarIcon
+  CalendarMonth as CalendarIcon,
+  Settings as SettingsIcon,
+  VerifiedUser as LicenseIcon,
+  Payment as PaymentIcon,
+  Person as PersonIcon
 } from '@mui/icons-material'
 import { AuthContext } from '../contexts/AuthContext'
 
@@ -47,12 +51,13 @@ const Layout = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [anchorEl, setAnchorEl] = useState(null)
   const [attendanceMenuOpen, setAttendanceMenuOpen] = useState(false)
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
 
   const menuItems = [
     { text: '대시보드', icon: <DashboardIcon />, path: '/dashboard' },
-    { 
-      text: '출결 관리', 
-      icon: <AttendanceIcon />, 
+    {
+      text: '출결 관리',
+      icon: <AttendanceIcon />,
       hasSubmenu: true,
       submenu: [
         { text: '일별 출석', icon: <TodayIcon />, path: '/attendance/daily' },
@@ -63,7 +68,18 @@ const Layout = ({ children }) => {
     { text: '강사 관리', icon: <TeachersIcon />, path: '/teachers' },
     { text: '강의 관리', icon: <LecturesIcon />, path: '/lectures' },
     { text: '메시지 관리', icon: <MessageIcon />, path: '/messages' },
-    { text: '파일 관리', icon: <FileIcon />, path: '/files' }
+    { text: '파일 관리', icon: <FileIcon />, path: '/files' },
+    {
+      text: '계정 관리',
+      icon: <AccountIcon />,
+      hasSubmenu: true,
+      submenu: [
+        { text: '설정 관리', icon: <SettingsIcon />, path: '/account/settings' },
+        { text: '라이선스 관리', icon: <LicenseIcon />, path: '/account/license' },
+        { text: '결제 내역', icon: <PaymentIcon />, path: '/account/payment' },
+        { text: '개인정보 변경', icon: <PersonIcon />, path: '/account/profile' }
+      ]
+    }
   ]
 
   const handleDrawerToggle = () => {
@@ -74,6 +90,8 @@ const Layout = ({ children }) => {
     if (hasSubmenu) {
       if (path === '출결 관리') {
         setAttendanceMenuOpen(!attendanceMenuOpen)
+      } else if (path === '계정 관리') {
+        setAccountMenuOpen(!accountMenuOpen)
       }
     } else {
       navigate(path)
@@ -123,12 +141,33 @@ const Layout = ({ children }) => {
                 {item.hasSubmenu && (
                   item.text === '출결 관리' ? (
                     attendanceMenuOpen ? <ExpandLess /> : <ExpandMore />
+                  ) : item.text === '계정 관리' ? (
+                    accountMenuOpen ? <ExpandLess /> : <ExpandMore />
                   ) : null
                 )}
               </ListItemButton>
             </ListItem>
             {item.hasSubmenu && item.text === '출결 관리' && (
               <Collapse in={attendanceMenuOpen} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  {item.submenu.map((subItem) => (
+                    <ListItemButton
+                      key={subItem.text}
+                      sx={{ pl: 4 }}
+                      selected={location.pathname === subItem.path}
+                      onClick={() => handleSubmenuClick(subItem.path)}
+                    >
+                      <ListItemIcon>
+                        {subItem.icon}
+                      </ListItemIcon>
+                      <ListItemText primary={subItem.text} />
+                    </ListItemButton>
+                  ))}
+                </List>
+              </Collapse>
+            )}
+            {item.hasSubmenu && item.text === '계정 관리' && (
+              <Collapse in={accountMenuOpen} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
                   {item.submenu.map((subItem) => (
                     <ListItemButton

@@ -422,7 +422,12 @@ const AttendanceDailyPage = () => {
         {/* 학생 출입 이력 다이얼로그 */}
         <Dialog
           open={!!selectedStudent}
-          onClose={handleCloseHistory}
+          onClose={(event, reason) => {
+            if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+              handleCloseHistory()
+            }
+          }}
+          disableEscapeKeyDown
           maxWidth="md"
           fullWidth
         >

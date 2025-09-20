@@ -441,7 +441,17 @@ const StudentPage = () => {
       </Card>
 
       {/* 학생 추가/수정 다이얼로그 */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+      <Dialog
+        open={dialogOpen}
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+            handleCloseDialog()
+          }
+        }}
+        disableEscapeKeyDown
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>
           {editingStudent ? '학생 정보 수정' : '새 학생 추가'}
         </DialogTitle>
@@ -815,7 +825,15 @@ const StudentPage = () => {
       </Dialog>
 
       {/* 사진 선택 옵션 다이얼로그 */}
-      <Dialog open={photoDialogOpen} onClose={() => setPhotoDialogOpen(false)}>
+      <Dialog
+        open={photoDialogOpen}
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+            setPhotoDialogOpen(false)
+          }
+        }}
+        disableEscapeKeyDown
+      >
         <DialogTitle>사진 선택 방법</DialogTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
@@ -848,7 +866,12 @@ const StudentPage = () => {
       {/* 카메라 촬영 다이얼로그 */}
       <Dialog
         open={showCamera}
-        onClose={stopCamera}
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+            stopCamera()
+          }
+        }}
+        disableEscapeKeyDown
         maxWidth="md"
         fullWidth
       >

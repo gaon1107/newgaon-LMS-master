@@ -773,9 +773,14 @@ const MessagePage = () => {
       )}
 
       {/* 발송 확인 다이얼로그 */}
-      <Dialog 
-        open={previewDialog.open} 
-        onClose={() => setPreviewDialog({ open: false, data: null })}
+      <Dialog
+        open={previewDialog.open}
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+            setPreviewDialog({ open: false, data: null })
+          }
+        }}
+        disableEscapeKeyDown
         maxWidth="sm"
         fullWidth
       >
@@ -827,7 +832,12 @@ const MessagePage = () => {
       {/* 템플릿 편집 다이얼로그 */}
       <Dialog
         open={templateDialog.open}
-        onClose={handleTemplateDialogClose}
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+            handleTemplateDialogClose()
+          }
+        }}
+        disableEscapeKeyDown
         maxWidth="md"
         fullWidth
       >

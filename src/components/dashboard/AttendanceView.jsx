@@ -33,6 +33,7 @@ import {
   Close as CloseIcon,
   Edit as EditIcon
 } from '@mui/icons-material'
+import GroupMessageModal from './GroupMessageModal'
 
 const AttendanceView = () => {
   const { students, updateStudentStatus } = useAttendance()
@@ -41,6 +42,7 @@ const AttendanceView = () => {
   const [selectedStudent, setSelectedStudent] = useState(null)
   const [newStatus, setNewStatus] = useState('')
   const [comment, setComment] = useState('')
+  const [messageModalOpen, setMessageModalOpen] = useState(false)
 
   // 상태 옵션
   const statusOptions = [
@@ -87,7 +89,7 @@ const AttendanceView = () => {
   })
 
   const handleSendGroupMessage = () => {
-    console.log('단체 메시지 전송')
+    setMessageModalOpen(true)
   }
 
   const handleSendMessage = (student) => {
@@ -234,7 +236,12 @@ const AttendanceView = () => {
       {/* 상태 변경 다이얼로그 */}
       <Dialog
         open={dialogOpen}
-        onClose={handleCloseDialog}
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+            handleCloseDialog()
+          }
+        }}
+        disableEscapeKeyDown
         maxWidth="sm"
         fullWidth
       >
@@ -317,6 +324,12 @@ const AttendanceView = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* 단체메세지 모달 */}
+      <GroupMessageModal
+        open={messageModalOpen}
+        onClose={() => setMessageModalOpen(false)}
+      />
     </Card>
   )
 }

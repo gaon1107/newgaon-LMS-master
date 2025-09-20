@@ -719,9 +719,14 @@ const HomePage = () => {
       </Box>
 
       {/* 로그인 다이얼로그 */}
-      <Dialog 
-        open={loginDialogOpen} 
-        onClose={() => setLoginDialogOpen(false)}
+      <Dialog
+        open={loginDialogOpen}
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+            setLoginDialogOpen(false)
+          }
+        }}
+        disableEscapeKeyDown
         maxWidth="sm"
         fullWidth
       >
@@ -822,7 +827,12 @@ const HomePage = () => {
       {/* 회원가입 다이얼로그 */}
       <Dialog
         open={registerDialogOpen}
-        onClose={() => setRegisterDialogOpen(false)}
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+            setRegisterDialogOpen(false)
+          }
+        }}
+        disableEscapeKeyDown
         maxWidth="md"
         fullWidth
       >
@@ -849,7 +859,12 @@ const HomePage = () => {
       {/* 고객문의 다이얼로그 */}
       <Dialog
         open={contactDialogOpen}
-        onClose={() => setContactDialogOpen(false)}
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+            setContactDialogOpen(false)
+          }
+        }}
+        disableEscapeKeyDown
         maxWidth="sm"
         fullWidth
       >

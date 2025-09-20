@@ -340,7 +340,17 @@ const LecturePage = () => {
       </Card>
 
       {/* 강의 추가/수정 다이얼로그 */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+      <Dialog
+        open={dialogOpen}
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+            handleCloseDialog()
+          }
+        }}
+        disableEscapeKeyDown
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>
           {editingLecture ? '강의 정보 수정' : '새 강의 추가'}
         </DialogTitle>

@@ -14,6 +14,10 @@ import TeacherPage from './pages/TeacherPage'
 import LecturePage from './pages/LecturePage'
 import MessagePage from './pages/MessagePage'
 import FilePage from './pages/FilePage'
+import SettingsPage from './pages/account/SettingsPage'
+import LicensePage from './pages/account/LicensePage'
+import PaymentPage from './pages/account/PaymentPage'
+import ProfilePage from './pages/account/ProfilePage'
 import Layout from './components/Layout'
 
 function App() {
@@ -32,7 +36,11 @@ function App() {
     '/teachers',
     '/lectures',
     '/messages',
-    '/files'
+    '/files',
+    '/account/settings',
+    '/account/license',
+    '/account/payment',
+    '/account/profile'
   ]
 
   const location = useLocation()
@@ -91,6 +99,26 @@ function App() {
         <Route path="/files" element={
           <Layout>
             <FilePage />
+          </Layout>
+        } />
+        <Route path="/account/settings" element={
+          <Layout>
+            <SettingsPage />
+          </Layout>
+        } />
+        <Route path="/account/license" element={
+          <Layout>
+            <LicensePage />
+          </Layout>
+        } />
+        <Route path="/account/payment" element={
+          <Layout>
+            <PaymentPage />
+          </Layout>
+        } />
+        <Route path="/account/profile" element={
+          <Layout>
+            <ProfilePage />
           </Layout>
         } />
         </Routes>
