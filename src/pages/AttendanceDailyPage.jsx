@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useAttendance } from '../contexts/AttendanceContext'
 import {
   Box,
   Typography,
@@ -8,13 +9,24 @@ import {
   TextField,
   Toolbar,
   Chip,
-  Avatar
+  Avatar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  Divider
 } from '@mui/material'
 import { DataGrid } from '@mui/x-data-grid'
 import {
   Refresh as RefreshIcon,
   Keyboard as KeyboardIcon,
-  Face as FaceIcon
+  Face as FaceIcon,
+  Close as CloseIcon,
+  AccessTime as AccessTimeIcon
 } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -23,114 +35,84 @@ import { ko } from 'date-fns/locale'
 import { format } from 'date-fns'
 
 const AttendanceDailyPage = () => {
+  const { attendanceRecords } = useAttendance()
   const [selectedDate, setSelectedDate] = useState(new Date())
-  const [attendanceData, setAttendanceData] = useState([])
   const [loading, setLoading] = useState(false)
+  const [selectedStudent, setSelectedStudent] = useState(null)
+  const [studentHistory, setStudentHistory] = useState([])
 
-  // 임시 데이터
-  const mockAttendanceData = [
-    {
-      id: 1,
-      studentName: '김철수',
-      className: '수학 A반',
-      stateDescription: '등원',
-      taggedAt: '2025-01-19 08:45:23',
-      isKeypad: false,
-      processTime: 1.2,
-      isForced: false,
-      isModified: false,
-      isDelayed: false,
-      comment: '정상 등원',
-      deviceId: 'DEVICE-001',
-      thumbnailData: '/api/images/thumbnail/1.jpg'
-    },
-    {
-      id: 2,
-      studentName: '이영희',
-      className: '수학 A반',
-      stateDescription: '하원',
-      taggedAt: '2025-01-19 17:30:15',
-      isKeypad: true,
-      processTime: 0.8,
-      isForced: false,
-      isModified: true,
-      isDelayed: false,
-      comment: '키패드로 하원 처리',
-      deviceId: 'DEVICE-002',
-      thumbnailData: null
-    },
-    {
-      id: 3,
-      studentName: '박민수',
-      className: '영어 B반',
-      stateDescription: '등원',
-      taggedAt: '2025-01-19 09:15:42',
-      isKeypad: false,
-      processTime: 2.1,
-      isForced: true,
-      isModified: false,
-      isDelayed: true,
-      comment: '지각 등원',
-      deviceId: 'DEVICE-001',
-      thumbnailData: '/api/images/thumbnail/3.jpg'
-    },
-    {
-      id: 4,
-      studentName: '최지현',
-      className: '영어 B반',
-      stateDescription: '등원',
-      taggedAt: '2025-01-19 08:30:10',
-      isKeypad: null,
-      processTime: 0,
-      isForced: false,
-      isModified: true,
-      isDelayed: false,
-      comment: '직접 입력',
-      deviceId: '',
-      thumbnailData: null
-    },
-    {
-      id: 5,
-      studentName: '김영수',
-      className: '수학 A반',
-      stateDescription: '하원',
-      taggedAt: '2025-01-19 18:00:25',
-      isKeypad: false,
-      processTime: 1.5,
-      isForced: false,
-      isModified: false,
-      isDelayed: false,
-      comment: '',
-      deviceId: 'DEVICE-003',
-      thumbnailData: '/api/images/thumbnail/5.jpg'
-    }
-  ]
+
 
   useEffect(() => {
-    loadAttendanceData()
-  }, [selectedDate])
+    // Context에서 데이터를 바로 사용하므로 별도 로딩 불필요
+    setLoading(false)
+  }, [selectedDate, attendanceRecords])
 
   const loadAttendanceData = async () => {
-    setLoading(true)
-    try {
-      // 임시 데이터 사용
-      setTimeout(() => {
-        setAttendanceData(mockAttendanceData)
-        setLoading(false)
-      }, 500)
-    } catch (error) {
-      console.error('출결 데이터 로딩 실패:', error)
-      setLoading(false)
-    }
+    // Context에서 데이터를 사용하므로 별도 로딩 불필요
+    setLoading(false)
   }
 
   const handleRefresh = () => {
     loadAttendanceData()
   }
 
+  const handleCloseHistory = () => {
+    setSelectedStudent(null)
+    setStudentHistory([])
+  }
+
+  const getStatusColor = (type) => {
+    switch (type) {
+      case '등원': return 'success'
+      case '하원': return 'info'
+      case '외출': return 'warning'
+      case '복귀': return 'secondary'
+      case '조퇴': return 'error'
+      default: return 'default'
+    }
+  }
+
+
+  // 학생별로 마지막 상태만 추출하는 함수
+  const getStudentLatestStatus = () => {
+    const studentMap = new Map()
+
+    // 시간 순으로 정렬 (최신순)
+    const sortedRecords = [...attendanceRecords].sort((a, b) =>
+      new Date(b.taggedAt) - new Date(a.taggedAt)
+    )
+
+    // 각 학생의 가장 최근 기록만 저장
+    sortedRecords.forEach(record => {
+      if (!studentMap.has(record.studentName)) {
+        studentMap.set(record.studentName, record)
+      }
+    })
+
+    return Array.from(studentMap.values())
+  }
 
   const getTotalCount = () => {
-    return attendanceData.length
+    return getStudentLatestStatus().length
+  }
+
+  const handleStudentSelect = (studentName) => {
+    setSelectedStudent(studentName)
+    // 해당 학생의 모든 기록을 시간순으로 정렬하여 이력으로 설정
+    const studentRecords = attendanceRecords
+      .filter(record => record.studentName === studentName)
+      .sort((a, b) => new Date(a.taggedAt) - new Date(b.taggedAt))
+      .map(record => ({
+        id: record.id,
+        type: record.stateDescription,
+        time: record.taggedAt,
+        method: record.isKeypad === null ? '직접입력' : record.isKeypad ? '키패드' : '영상인식',
+        deviceId: record.deviceId,
+        comment: record.comment
+      }))
+
+    setStudentHistory(studentRecords)
   }
 
   // DataGrid 컬럼 정의 (리사이징 가능하게 설정)
@@ -177,7 +159,19 @@ const AttendanceDailyPage = () => {
       resizable: true,
       renderCell: (params) => {
         return (
-          <Typography variant="body2" fontWeight="bold" noWrap>
+          <Typography
+            variant="body2"
+            fontWeight="bold"
+            noWrap
+            sx={{
+              cursor: 'pointer',
+              color: 'primary.main',
+              '&:hover': {
+                textDecoration: 'underline'
+              }
+            }}
+            onClick={() => handleStudentSelect(params.value)}
+          >
             {params.value}
           </Typography>
         )
@@ -352,7 +346,7 @@ const AttendanceDailyPage = () => {
             
             <Box sx={{ height: 600, width: '100%', overflow: 'auto' }}>
               <DataGrid
-                rows={attendanceData}
+                rows={getStudentLatestStatus()}
                 columns={columns}
                 loading={loading}
                 pageSizeOptions={[10, 25, 50, 100]}
@@ -424,6 +418,83 @@ const AttendanceDailyPage = () => {
             </Box>
           </CardContent>
         </Card>
+
+        {/* 학생 출입 이력 다이얼로그 */}
+        <Dialog
+          open={!!selectedStudent}
+          onClose={handleCloseHistory}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography variant="h6">
+                {selectedStudent} 출입 이력
+              </Typography>
+              <IconButton onClick={handleCloseHistory} size="small">
+                <CloseIcon />
+              </IconButton>
+            </Box>
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {format(selectedDate, 'yyyy년 MM월 dd일')} 출입 이력
+            </Typography>
+
+            {studentHistory.length > 0 ? (
+              <List>
+                {studentHistory.map((history, index) => (
+                  <React.Fragment key={history.id}>
+                    <ListItem sx={{ py: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
+                        <AccessTimeIcon color="action" fontSize="small" />
+                      </Box>
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Chip
+                              label={history.type}
+                              size="small"
+                              color={getStatusColor(history.type)}
+                            />
+                            <Typography variant="body1" fontWeight="medium">
+                              {format(new Date(history.time), 'HH:mm:ss')}
+                            </Typography>
+                          </Box>
+                        }
+                        secondary={
+                          <Box sx={{ mt: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                              방법: {history.method}
+                              {history.deviceId && ` • 장치: ${history.deviceId}`}
+                            </Typography>
+                            {history.comment && (
+                              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                                참고: {history.comment}
+                              </Typography>
+                            )}
+                          </Box>
+                        }
+                      />
+                    </ListItem>
+                    {index < studentHistory.length - 1 && <Divider />}
+                  </React.Fragment>
+                ))}
+              </List>
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography color="text.secondary">
+                  출입 이력이 없습니다.
+                </Typography>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseHistory}>
+              닫기
+            </Button>
+          </DialogActions>
+        </Dialog>
 
       </Box>
     </LocalizationProvider>

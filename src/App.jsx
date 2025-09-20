@@ -2,6 +2,7 @@ import React, { useContext } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthContext } from './contexts/AuthContext'
 import { LMSProvider } from './contexts/LMSContext'
+import { AttendanceProvider } from './contexts/AttendanceContext'
 import HomePage from './pages/HomePage'
 import RegisterPage from './pages/RegisterPage'
 import PasswordResetPage from './pages/PasswordResetPage'
@@ -44,7 +45,8 @@ function App() {
 
   return (
     <LMSProvider>
-      <Routes>
+      <AttendanceProvider>
+        <Routes>
         {/* 공개 페이지들 (센차와 동일한 구조) */}
         <Route path="/" element={<HomePage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -91,7 +93,8 @@ function App() {
             <FilePage />
           </Layout>
         } />
-      </Routes>
+        </Routes>
+      </AttendanceProvider>
     </LMSProvider>
   )
 }

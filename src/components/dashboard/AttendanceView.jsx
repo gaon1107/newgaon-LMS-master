@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useAttendance } from '../../contexts/AttendanceContext'
 import {
   Box,
   Typography,
@@ -11,75 +12,45 @@ import {
   ToggleButtonGroup,
   Grid,
   IconButton,
-  Tooltip
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Alert
 } from '@mui/material'
 import {
   Message as MessageIcon,
   Person as PersonIcon,
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
-  Groups as GroupsIcon
+  Groups as GroupsIcon,
+  Close as CloseIcon,
+  Edit as EditIcon
 } from '@mui/icons-material'
 
 const AttendanceView = () => {
+  const { students, updateStudentStatus } = useAttendance()
   const [filter, setFilter] = useState('all')
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [selectedStudent, setSelectedStudent] = useState(null)
+  const [newStatus, setNewStatus] = useState('')
+  const [comment, setComment] = useState('')
 
-  // 임시 학생 데이터
-  const students = [
-    {
-      id: 1,
-      name: '김철수',
-      identifier: 'STU001',
-      status: 'present',
-      statusDescription: '등원',
-      lastUpdate: '2024-01-15 09:15',
-      profileImage: '/api/placeholder/60/60'
-    },
-    {
-      id: 2,
-      name: '이영희',
-      identifier: 'STU002',
-      status: 'absent',
-      statusDescription: '미등원',
-      lastUpdate: null,
-      profileImage: '/api/placeholder/60/60'
-    },
-    {
-      id: 3,
-      name: '박민수',
-      identifier: 'STU003',
-      status: 'present',
-      statusDescription: '등원',
-      lastUpdate: '2024-01-15 08:45',
-      profileImage: '/api/placeholder/60/60'
-    },
-    {
-      id: 4,
-      name: '최지은',
-      identifier: 'STU004',
-      status: 'early_leave',
-      statusDescription: '조퇴',
-      lastUpdate: '2024-01-15 14:30',
-      profileImage: '/api/placeholder/60/60'
-    },
-    {
-      id: 5,
-      name: '정현우',
-      identifier: 'STU005',
-      status: 'present',
-      statusDescription: '등원',
-      lastUpdate: '2024-01-15 09:00',
-      profileImage: '/api/placeholder/60/60'
-    },
-    {
-      id: 6,
-      name: '한미래',
-      identifier: 'STU006',
-      status: 'late',
-      statusDescription: '지각',
-      lastUpdate: '2024-01-15 10:15',
-      profileImage: '/api/placeholder/60/60'
-    }
+  // 상태 옵션
+  const statusOptions = [
+    { value: 'present', label: '등원', description: '정상 등원' },
+    { value: 'absent', label: '미등원', description: '등원하지 않음' },
+    { value: 'late', label: '지각', description: '늦게 등원' },
+    { value: 'early_leave', label: '조퇴', description: '일찍 하원' },
+    { value: 'out', label: '외출', description: '외출 중' },
+    { value: 'returned', label: '복귀', description: '외출 후 복귀' },
+    { value: 'left', label: '하원', description: '정상 하원' }
   ]
 
   const getStatusColor = (status) => {
@@ -88,6 +59,9 @@ const AttendanceView = () => {
       case 'absent': return '#f44336'
       case 'late': return '#ff9800'
       case 'early_leave': return '#9c27b0'
+      case 'out': return '#ff5722'
+      case 'returned': return '#2196f3'
+      case 'left': return '#607d8b'
       default: return '#757575'
     }
   }
@@ -118,6 +92,28 @@ const AttendanceView = () => {
 
   const handleSendMessage = (student) => {
     console.log('메시지 전송:', student.name)
+  }
+
+  const handleStatusClick = (student) => {
+    setSelectedStudent(student)
+    setNewStatus(student.status)
+    setComment('')
+    setDialogOpen(true)
+  }
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false)
+    setSelectedStudent(null)
+    setNewStatus('')
+    setComment('')
+  }
+
+  const handleSaveStatus = () => {
+    if (!newStatus || !selectedStudent) return
+
+    // Context의 updateStudentStatus 함수 사용
+    updateStudentStatus(selectedStudent.id, newStatus, comment)
+    handleCloseDialog()
   }
 
   return (
@@ -170,9 +166,16 @@ const AttendanceView = () => {
                       icon={getStatusIcon(student.status)}
                       label={student.statusDescription}
                       size="small"
+                      clickable
+                      onClick={() => handleStatusClick(student)}
                       sx={{
                         backgroundColor: getStatusColor(student.status),
-                        color: 'white'
+                        color: 'white',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          opacity: 0.8,
+                          transform: 'scale(1.02)'
+                        }
                       }}
                     />
                     {student.lastUpdate && (
@@ -227,6 +230,93 @@ const AttendanceView = () => {
           </Box>
         )}
       </CardContent>
+
+      {/* 상태 변경 다이얼로그 */}
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="h6">
+              <EditIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+              학생 상태 변경
+            </Typography>
+            <IconButton onClick={handleCloseDialog} size="small">
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {selectedStudent && (
+            <>
+              <Alert severity="info" sx={{ mb: 3 }}>
+                <Typography variant="body2">
+                  <strong>{selectedStudent.name}</strong>님의 출석 상태를 변경합니다.
+                </Typography>
+              </Alert>
+
+              <FormControl fullWidth sx={{ mb: 3 }}>
+                <InputLabel>출석 상태</InputLabel>
+                <Select
+                  value={newStatus}
+                  label="출석 상태"
+                  onChange={(e) => setNewStatus(e.target.value)}
+                >
+                  {statusOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box
+                          sx={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: '50%',
+                            backgroundColor: getStatusColor(option.value),
+                            mr: 1
+                          }}
+                        />
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                            {option.label}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {option.description}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <TextField
+                fullWidth
+                label="참고사항 (선택)"
+                placeholder="상태 변경 사유나 특이사항을 입력하세요"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                multiline
+                rows={3}
+                variant="outlined"
+              />
+            </>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 1 }}>
+          <Button onClick={handleCloseDialog} variant="outlined">
+            취소
+          </Button>
+          <Button
+            onClick={handleSaveStatus}
+            variant="contained"
+            disabled={!newStatus}
+          >
+            변경 확인
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   )
 }
