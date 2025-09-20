@@ -33,12 +33,14 @@ import {
   Send as SendIcon,
   History as HistoryIcon,
   People as PeopleIcon,
-  Template as TemplateIcon,
+  Article as TemplateIcon,
   Payment as PaymentIcon,
   School as SchoolIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Add as AddIcon
+  Add as AddIcon,
+  ExitToApp as OutingIcon,
+  Home as ReturnIcon
 } from '@mui/icons-material'
 
 const MessagePage = () => {
@@ -69,21 +71,40 @@ const MessagePage = () => {
       name: '결제 요청 메세지',
       type: 'payment',
       template: '안녕하세요. [학생명] 학생의 [강의명] 수강료 [비용]원 결제를 요청드립니다. 납부 기한: [납부기한]',
-      description: '월 수강료 결제 요청 시 사용'
+      description: '월 수강료 결제 요청 시 사용',
+      isDefault: true
     },
     {
       id: 'attendance_in',
       name: '등원 알림 메세지',
       type: 'attendance',
       template: '[학생명] 학생이 [시간]에 등원하였습니다.',
-      description: '학생 등원 시 자동 발송'
+      description: '학생 등원 시 자동 발송',
+      isDefault: true
     },
     {
       id: 'attendance_out',
       name: '하원 알림 메세지',
       type: 'attendance',
       template: '[학생명] 학생이 [시간]에 하원하였습니다.',
-      description: '학생 하원 시 자동 발송'
+      description: '학생 하원 시 자동 발송',
+      isDefault: true
+    },
+    {
+      id: 'outing_alert',
+      name: '외출 알림 메세지',
+      type: 'outing',
+      template: '[학생명] 학생이 [시간]에 외출하였습니다. 목적: [외출목적]',
+      description: '학생 외출 시 자동 발송',
+      isDefault: true
+    },
+    {
+      id: 'return_alert',
+      name: '복귀 알림 메세지',
+      type: 'return',
+      template: '[학생명] 학생이 [시간]에 복귀하였습니다.',
+      description: '학생 복귀 시 자동 발송',
+      isDefault: true
     }
   ]
 
@@ -143,11 +164,24 @@ const MessagePage = () => {
   const loadMessageTemplates = () => {
     try {
       const savedTemplates = localStorage.getItem('lms_message_templates')
+      const savedDefaultTemplates = localStorage.getItem('lms_default_templates')
+
+      let updatedDefaultTemplates = defaultTemplates
+
+      // 수정된 기본 템플릿이 있다면 로드
+      if (savedDefaultTemplates) {
+        const parsedDefaults = JSON.parse(savedDefaultTemplates)
+        updatedDefaultTemplates = defaultTemplates.map(dt => {
+          const saved = parsedDefaults.find(pt => pt.id === dt.id)
+          return saved ? { ...dt, ...saved, isDefault: true } : dt
+        })
+      }
+
       if (savedTemplates) {
         const parsed = JSON.parse(savedTemplates)
-        setMessageTemplates([...defaultTemplates, ...parsed])
+        setMessageTemplates([...updatedDefaultTemplates, ...parsed])
       } else {
-        setMessageTemplates(defaultTemplates)
+        setMessageTemplates(updatedDefaultTemplates)
       }
     } catch (error) {
       console.error('템플릿 로딩 실패:', error)
@@ -157,8 +191,11 @@ const MessagePage = () => {
 
   const saveMessageTemplates = (templates) => {
     try {
-      const customTemplates = templates.filter(t => !defaultTemplates.find(dt => dt.id === t.id))
+      const customTemplates = templates.filter(t => !t.isDefault)
+      const modifiedDefaultTemplates = templates.filter(t => t.isDefault && defaultTemplates.find(dt => dt.id === t.id))
+
       localStorage.setItem('lms_message_templates', JSON.stringify(customTemplates))
+      localStorage.setItem('lms_default_templates', JSON.stringify(modifiedDefaultTemplates))
     } catch (error) {
       console.error('템플릿 저장 실패:', error)
     }
@@ -183,6 +220,11 @@ const MessagePage = () => {
       message = message.replace(/\[강의명\]/g, lectureNames || '미배정')
       message = message.replace(/\[비용\]/g, totalFee.toLocaleString())
       message = message.replace(/\[납부기한\]/g, options.dueDate || '매월 25일')
+    }
+
+    // 외출 관련 치환
+    if (template.type === 'outing') {
+      message = message.replace(/\[외출목적\]/g, options.outingPurpose || '개인 사정')
     }
 
     return message
@@ -287,6 +329,14 @@ const MessagePage = () => {
   }
 
   const handleTemplateDelete = (templateId) => {
+    const template = messageTemplates.find(t => t.id === templateId)
+
+    // 기본 템플릿은 삭제 불가
+    if (template && template.isDefault) {
+      alert('기본 템플릿은 삭제할 수 없습니다. 수정만 가능합니다.')
+      return
+    }
+
     if (window.confirm('정말 삭제하시겠습니까?')) {
       const updatedTemplates = messageTemplates.filter(t => t.id !== templateId)
       setMessageTemplates(updatedTemplates)
@@ -635,6 +685,10 @@ const MessagePage = () => {
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                               {template.type === 'payment' ? (
                                 <PaymentIcon color="primary" sx={{ mr: 1 }} />
+                              ) : template.type === 'outing' ? (
+                                <OutingIcon color="warning" sx={{ mr: 1 }} />
+                              ) : template.type === 'return' ? (
+                                <ReturnIcon color="success" sx={{ mr: 1 }} />
                               ) : (
                                 <SchoolIcon color="secondary" sx={{ mr: 1 }} />
                               )}
@@ -643,23 +697,23 @@ const MessagePage = () => {
                               </Typography>
                             </Box>
                             <Box>
-                              {!defaultTemplates.find(dt => dt.id === template.id) && (
-                                <>
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleTemplateDialogOpen(template)}
-                                    sx={{ mr: 1 }}
-                                  >
-                                    <EditIcon />
-                                  </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    color="error"
-                                    onClick={() => handleTemplateDelete(template.id)}
-                                  >
-                                    <DeleteIcon />
-                                  </IconButton>
-                                </>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleTemplateDialogOpen(template)}
+                                sx={{ mr: 1 }}
+                                title={template.isDefault ? '기본 템플릿 수정' : '템플릿 수정'}
+                              >
+                                <EditIcon />
+                              </IconButton>
+                              {!template.isDefault && (
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => handleTemplateDelete(template.id)}
+                                  title="템플릿 삭제"
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
                               )}
                             </Box>
                           </Box>
@@ -676,11 +730,21 @@ const MessagePage = () => {
 
                           <Box sx={{ mt: 2 }}>
                             <Chip
-                              label={template.type === 'payment' ? '결제 관련' : '등하원 관련'}
-                              color={template.type === 'payment' ? 'primary' : 'secondary'}
+                              label={
+                                template.type === 'payment' ? '결제 관련' :
+                                template.type === 'outing' ? '외출 관련' :
+                                template.type === 'return' ? '복귀 관련' :
+                                template.type === 'attendance' ? '등하원 관련' : '일반'
+                              }
+                              color={
+                                template.type === 'payment' ? 'primary' :
+                                template.type === 'outing' ? 'warning' :
+                                template.type === 'return' ? 'success' :
+                                'secondary'
+                              }
                               size="small"
                             />
-                            {defaultTemplates.find(dt => dt.id === template.id) && (
+                            {template.isDefault && (
                               <Chip
                                 label="기본 템플릿"
                                 color="default"
@@ -791,6 +855,8 @@ const MessagePage = () => {
                 >
                   <MenuItem value="payment">결제 관련</MenuItem>
                   <MenuItem value="attendance">등하원 관련</MenuItem>
+                  <MenuItem value="outing">외출 관련</MenuItem>
+                  <MenuItem value="return">복귀 관련</MenuItem>
                   <MenuItem value="general">일반</MenuItem>
                 </Select>
               </FormControl>
@@ -803,7 +869,7 @@ const MessagePage = () => {
                 rows={6}
                 value={templateForm.template}
                 onChange={(e) => setTemplateForm(prev => ({ ...prev, template: e.target.value }))}
-                helperText="사용 가능한 변수: [학생명], [시간], [강의명], [비용], [납부기한]"
+                helperText="사용 가능한 변수: [학생명], [시간], [강의명], [비용], [납부기한], [외출목적]"
                 required
               />
             </Grid>
@@ -837,8 +903,11 @@ const MessagePage = () => {
             <Typography variant="body2" sx={{ mb: 1 }}>
               • <code>[비용]</code> - 총 수강료 (결제 관련 템플릿)
             </Typography>
-            <Typography variant="body2">
+            <Typography variant="body2" sx={{ mb: 1 }}>
               • <code>[납부기한]</code> - 결제 마감일 (결제 관련 템플릿)
+            </Typography>
+            <Typography variant="body2">
+              • <code>[외출목적]</code> - 외출 목적/사유 (외출 관련 템플릿)
             </Typography>
           </Box>
         </DialogContent>
