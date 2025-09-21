@@ -43,9 +43,6 @@ const StudentPage = () => {
   const [selectedClass, setSelectedClass] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingStudent, setEditingStudent] = useState(null)
-  const [photoDialogOpen, setPhotoDialogOpen] = useState(false)
-  const [cameraStream, setCameraStream] = useState(null)
-  const [showCamera, setShowCamera] = useState(false)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -75,9 +72,6 @@ const StudentPage = () => {
     }
   })
 
-  // Context에서 학생 데이터를 가져오므로 mock 데이터 불필요
-
-  // 강의 목록을 Context에서 가져와서 클래스 옵션으로 변환
   const mockClasses = [
     { id: '', name: '전체' },
     ...lectures.map(lecture => ({
@@ -96,22 +90,6 @@ const StudentPage = () => {
     { id: 'art', name: '예체과' }
   ]
 
-  useEffect(() => {
-    loadStudents()
-  }, [])
-
-  const loadStudents = async () => {
-    setLoading(true)
-    try {
-      setTimeout(() => {
-        setStudents(mockStudents)
-        setLoading(false)
-      }, 500)
-    } catch (error) {
-      console.error('학생 데이터 로딩 실패:', error)
-      setLoading(false)
-    }
-  }
 
   const resetForm = () => {
     setFormData({

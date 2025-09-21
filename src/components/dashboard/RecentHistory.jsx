@@ -111,8 +111,6 @@ const RecentHistory = () => {
 
   const handleRefresh = () => {
     setLastUpdate(new Date())
-    // 실제로는 API 호출하여 데이터 갱신
-    console.log('데이터 갱신')
   }
 
   const handleAutoRefreshToggle = (event) => {

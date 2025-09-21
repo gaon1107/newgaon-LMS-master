@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/newgaon-LMS-master/',
+  base: process.env.VERCEL ? '/' : (process.env.NODE_ENV === 'production' ? '/newgaon-LMS-master/' : '/'),
   
   server: {
     port: 3000,

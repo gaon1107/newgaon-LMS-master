@@ -80,3 +80,14 @@ coverage/
 
 # TernJS port file
 .tern-port
+
+# Backup and temporary folders
+*_backup_temp/
+.claude_backup_temp/
+build_backup_temp/
+
+# Claude Code settings
+.claude/
+
+# Package lock files (if using yarn)
+package-lock.json

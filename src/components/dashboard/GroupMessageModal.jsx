@@ -30,9 +30,7 @@ import {
 import {
   Send as SendIcon,
   Close as CloseIcon,
-  School as SchoolIcon,
-  SelectAll as SelectAllIcon,
-  Deselect as DeselectIcon
+  School as SchoolIcon
 } from '@mui/icons-material'
 
 const GroupMessageModal = ({ open, onClose }) => {

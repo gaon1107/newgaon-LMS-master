@@ -20,12 +20,9 @@ import PaymentPage from './pages/account/PaymentPage'
 import ProfilePage from './pages/account/ProfilePage'
 import Layout from './components/Layout'
 
-function App() {
+function AppContent() {
   const { user, isLoading } = useContext(AuthContext)
-
-  if (isLoading) {
-    return <div>로딩 중...</div>
-  }
+  const location = useLocation()
 
   // 로그인이 필요한 페이지들 (관리자 페이지)
   const privateRoutes = [
@@ -43,8 +40,11 @@ function App() {
     '/account/profile'
   ]
 
-  const location = useLocation()
   const isPrivateRoute = privateRoutes.includes(location.pathname)
+
+  if (isLoading) {
+    return <div>로딩 중...</div>
+  }
 
   // 로그인하지 않은 사용자가 private route에 접근하려고 할 때
   if (!user && isPrivateRoute) {
@@ -125,6 +125,10 @@ function App() {
       </AttendanceProvider>
     </LMSProvider>
   )
+}
+
+function App() {
+  return <AppContent />
 }
 
 export default App
