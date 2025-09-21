@@ -43,6 +43,9 @@ const StudentPage = () => {
   const [selectedClass, setSelectedClass] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingStudent, setEditingStudent] = useState(null)
+  const [photoDialogOpen, setPhotoDialogOpen] = useState(false)
+  const [cameraStream, setCameraStream] = useState(null)
+  const [showCamera, setShowCamera] = useState(false)
 
   const [formData, setFormData] = useState({
     name: '',
