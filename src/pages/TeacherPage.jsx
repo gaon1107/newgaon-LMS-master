@@ -13,8 +13,6 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   Grid,
@@ -29,6 +27,7 @@ import {
   Phone as PhoneIcon,
   Email as EmailIcon
 } from '@mui/icons-material'
+import DraggableDialog from '../components/common/DraggableDialog'
 
 const TeacherPage = () => {
   const [teachers, setTeachers] = useState([])
@@ -278,7 +277,7 @@ const TeacherPage = () => {
       </Card>
 
       {/* 강사 추가/수정 다이얼로그 */}
-      <Dialog
+      <DraggableDialog
         open={dialogOpen}
         onClose={(event, reason) => {
           if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
@@ -288,10 +287,8 @@ const TeacherPage = () => {
         disableEscapeKeyDown
         maxWidth="md"
         fullWidth
+        title={editingTeacher ? '강사 정보 수정' : '새 강사 추가'}
       >
-        <DialogTitle>
-          {editingTeacher ? '강사 정보 수정' : '새 강사 추가'}
-        </DialogTitle>
         <DialogContent>
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
             <Grid container spacing={2}>
@@ -366,7 +363,7 @@ const TeacherPage = () => {
             {editingTeacher ? '수정' : '추가'}
           </Button>
         </DialogActions>
-      </Dialog>
+      </DraggableDialog>
     </Box>
   )
 }

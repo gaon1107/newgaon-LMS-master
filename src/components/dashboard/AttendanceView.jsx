@@ -13,8 +13,6 @@ import {
   Grid,
   IconButton,
   Tooltip,
-  Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
@@ -33,6 +31,7 @@ import {
   Close as CloseIcon,
   Edit as EditIcon
 } from '@mui/icons-material'
+import DraggableDialog from '../common/DraggableDialog'
 import GroupMessageModal from './GroupMessageModal'
 
 const AttendanceView = () => {
@@ -234,7 +233,7 @@ const AttendanceView = () => {
       </CardContent>
 
       {/* 상태 변경 다이얼로그 */}
-      <Dialog
+      <DraggableDialog
         open={dialogOpen}
         onClose={(event, reason) => {
           if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
@@ -244,8 +243,7 @@ const AttendanceView = () => {
         disableEscapeKeyDown
         maxWidth="sm"
         fullWidth
-      >
-        <DialogTitle>
+        title={
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography variant="h6">
               <EditIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
@@ -255,7 +253,8 @@ const AttendanceView = () => {
               <CloseIcon />
             </IconButton>
           </Box>
-        </DialogTitle>
+        }
+      >
         <DialogContent>
           {selectedStudent && (
             <>
@@ -323,7 +322,7 @@ const AttendanceView = () => {
             변경 확인
           </Button>
         </DialogActions>
-      </Dialog>
+      </DraggableDialog>
 
       {/* 단체메세지 모달 */}
       <GroupMessageModal

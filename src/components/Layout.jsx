@@ -37,7 +37,10 @@ import {
   Settings as SettingsIcon,
   VerifiedUser as LicenseIcon,
   Payment as PaymentIcon,
-  Person as PersonIcon
+  Person as PersonIcon,
+  AdminPanelSettings as AdminIcon,
+  Group as MembershipIcon,
+  Announcement as AnnouncementIcon
 } from '@mui/icons-material'
 import { AuthContext } from '../contexts/AuthContext'
 
@@ -52,8 +55,10 @@ const Layout = ({ children }) => {
   const [anchorEl, setAnchorEl] = useState(null)
   const [attendanceMenuOpen, setAttendanceMenuOpen] = useState(false)
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false)
 
-  const menuItems = [
+  // 기본 메뉴 (모든 사용자)
+  const baseMenuItems = [
     { text: '대시보드', icon: <DashboardIcon />, path: '/dashboard' },
     {
       text: '출결 관리',
@@ -82,6 +87,24 @@ const Layout = ({ children }) => {
     }
   ]
 
+  // 슈퍼관리자 전용 메뉴
+  const superAdminMenuItems = [
+    {
+      text: '슈퍼관리자',
+      icon: <AdminIcon />,
+      hasSubmenu: true,
+      submenu: [
+        { text: '가입 현황 관리', icon: <MembershipIcon />, path: '/admin/membership' },
+        { text: '공지사항 관리', icon: <AnnouncementIcon />, path: '/admin/announcements' }
+      ]
+    }
+  ]
+
+  // 사용자 역할에 따른 메뉴 구성
+  const menuItems = user?.role === 'superadmin'
+    ? [...baseMenuItems, ...superAdminMenuItems]
+    : baseMenuItems
+
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
   }
@@ -92,6 +115,8 @@ const Layout = ({ children }) => {
         setAttendanceMenuOpen(!attendanceMenuOpen)
       } else if (path === '계정 관리') {
         setAccountMenuOpen(!accountMenuOpen)
+      } else if (path === '슈퍼관리자') {
+        setAdminMenuOpen(!adminMenuOpen)
       }
     } else {
       navigate(path)
@@ -143,6 +168,8 @@ const Layout = ({ children }) => {
                     attendanceMenuOpen ? <ExpandLess /> : <ExpandMore />
                   ) : item.text === '계정 관리' ? (
                     accountMenuOpen ? <ExpandLess /> : <ExpandMore />
+                  ) : item.text === '슈퍼관리자' ? (
+                    adminMenuOpen ? <ExpandLess /> : <ExpandMore />
                   ) : null
                 )}
               </ListItemButton>
@@ -168,6 +195,25 @@ const Layout = ({ children }) => {
             )}
             {item.hasSubmenu && item.text === '계정 관리' && (
               <Collapse in={accountMenuOpen} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  {item.submenu.map((subItem) => (
+                    <ListItemButton
+                      key={subItem.text}
+                      sx={{ pl: 4 }}
+                      selected={location.pathname === subItem.path}
+                      onClick={() => handleSubmenuClick(subItem.path)}
+                    >
+                      <ListItemIcon>
+                        {subItem.icon}
+                      </ListItemIcon>
+                      <ListItemText primary={subItem.text} />
+                    </ListItemButton>
+                  ))}
+                </List>
+              </Collapse>
+            )}
+            {item.hasSubmenu && item.text === '슈퍼관리자' && (
+              <Collapse in={adminMenuOpen} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
                   {item.submenu.map((subItem) => (
                     <ListItemButton

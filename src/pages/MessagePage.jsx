@@ -22,8 +22,6 @@ import {
   TableRow,
   Tabs,
   Tab,
-  Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   IconButton,
@@ -42,6 +40,7 @@ import {
   ExitToApp as OutingIcon,
   Home as ReturnIcon
 } from '@mui/icons-material'
+import DraggableDialog from '../components/common/DraggableDialog'
 
 const MessagePage = () => {
   const { students, lectures } = useLMS()
@@ -773,7 +772,7 @@ const MessagePage = () => {
       )}
 
       {/* 발송 확인 다이얼로그 */}
-      <Dialog
+      <DraggableDialog
         open={previewDialog.open}
         onClose={(event, reason) => {
           if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
@@ -783,10 +782,8 @@ const MessagePage = () => {
         disableEscapeKeyDown
         maxWidth="sm"
         fullWidth
+        title="메시지 발송 확인"
       >
-        <DialogTitle>
-          메시지 발송 확인
-        </DialogTitle>
         <DialogContent>
           {previewDialog.data && (
             <Box>
@@ -827,10 +824,10 @@ const MessagePage = () => {
             {loading ? '발송 중...' : '발송하기'}
           </Button>
         </DialogActions>
-      </Dialog>
+      </DraggableDialog>
 
       {/* 템플릿 편집 다이얼로그 */}
-      <Dialog
+      <DraggableDialog
         open={templateDialog.open}
         onClose={(event, reason) => {
           if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
@@ -840,10 +837,8 @@ const MessagePage = () => {
         disableEscapeKeyDown
         maxWidth="md"
         fullWidth
+        title={templateDialog.editing ? '템플릿 수정' : '새 템플릿 추가'}
       >
-        <DialogTitle>
-          {templateDialog.editing ? '템플릿 수정' : '새 템플릿 추가'}
-        </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12} sm={6}>
@@ -933,7 +928,7 @@ const MessagePage = () => {
             {templateDialog.editing ? '수정' : '추가'}
           </Button>
         </DialogActions>
-      </Dialog>
+      </DraggableDialog>
     </Box>
   )
 }

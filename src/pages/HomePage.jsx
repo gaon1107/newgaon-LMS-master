@@ -7,7 +7,6 @@ import {
   Button,
   Box,
   Container,
-  Dialog,
   DialogContent,
   TextField,
   FormControlLabel,
@@ -17,18 +16,30 @@ import {
   Alert,
   CircularProgress,
   Paper,
-  Grid
+  Grid,
+  List,
+  ListItem,
+  ListItemText,
+  Chip,
+  CardContent,
+  Card,
+  DialogActions
 } from '@mui/material'
 import { Login as LoginIcon, PersonAdd as PersonAddIcon } from '@mui/icons-material'
 import { AuthContext } from '../contexts/AuthContext'
+import { useAnnouncements } from '../contexts/AnnouncementContext'
+import DraggableDialog from '../components/common/DraggableDialog'
 
 const HomePage = () => {
   const navigate = useNavigate()
   const { login, isLoading } = useContext(AuthContext)
+  const { getPublishedAnnouncements, incrementViews } = useAnnouncements()
 
   const [loginDialogOpen, setLoginDialogOpen] = useState(false)
   const [registerDialogOpen, setRegisterDialogOpen] = useState(false)
   const [contactDialogOpen, setContactDialogOpen] = useState(false)
+  const [announcementDialogOpen, setAnnouncementDialogOpen] = useState(false)
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState(null)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [loginError, setLoginError] = useState('')
 
@@ -60,6 +71,63 @@ const HomePage = () => {
       }
     } catch (error) {
       setLoginError('로그인 중 오류가 발생했습니다.')
+    }
+  }
+
+  const handleAnnouncementClick = () => {
+    setAnnouncementDialogOpen(true)
+  }
+
+  const handleAnnouncementItemClick = (announcement) => {
+    setSelectedAnnouncement(announcement)
+    incrementViews(announcement.id)
+  }
+
+  const handleAnnouncementDialogClose = () => {
+    setAnnouncementDialogOpen(false)
+    setSelectedAnnouncement(null)
+  }
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('ko-KR')
+  }
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
+  const getCategoryText = (category) => {
+    switch (category) {
+      case 'maintenance': return '점검'
+      case 'update': return '업데이트'
+      case 'guide': return '가이드'
+      case 'billing': return '요금'
+      case 'general': return '일반'
+      default: return '기타'
+    }
+  }
+
+  const getCategoryColor = (category) => {
+    switch (category) {
+      case 'maintenance': return 'error'
+      case 'update': return 'info'
+      case 'guide': return 'success'
+      case 'billing': return 'warning'
+      case 'general': return 'default'
+      default: return 'default'
+    }
+  }
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'high': return '#ff4444'
+      case 'medium': return '#ff8800'
+      case 'normal': return '#666'
+      default: return '#666'
     }
   }
 
@@ -127,9 +195,10 @@ const HomePage = () => {
               <i className="fas fa-question" style={{ marginRight: 8 }}></i>
               고객문의
             </Button>
-            <Button 
-              color="inherit" 
+            <Button
+              color="inherit"
               sx={{ color: '#333', fontWeight: 'bold', mx: 1 }}
+              onClick={handleAnnouncementClick}
             >
               <i className="fas fa-bell" style={{ marginRight: 8 }}></i>
               공지사항
@@ -719,7 +788,7 @@ const HomePage = () => {
       </Box>
 
       {/* 로그인 다이얼로그 */}
-      <Dialog
+      <DraggableDialog
         open={loginDialogOpen}
         onClose={(event, reason) => {
           if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
@@ -822,10 +891,10 @@ const HomePage = () => {
             회원 가입
           </Button>
         </DialogContent>
-      </Dialog>
+      </DraggableDialog>
 
       {/* 회원가입 다이얼로그 */}
-      <Dialog
+      <DraggableDialog
         open={registerDialogOpen}
         onClose={(event, reason) => {
           if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
@@ -854,10 +923,10 @@ const HomePage = () => {
             회원가입 페이지로 이동
           </Button>
         </DialogContent>
-      </Dialog>
+      </DraggableDialog>
 
       {/* 고객문의 다이얼로그 */}
-      <Dialog
+      <DraggableDialog
         open={contactDialogOpen}
         onClose={(event, reason) => {
           if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
@@ -894,7 +963,187 @@ const HomePage = () => {
             확인
           </Button>
         </DialogContent>
-      </Dialog>
+      </DraggableDialog>
+
+      {/* 공지사항 다이얼로그 */}
+      <DraggableDialog
+        open={announcementDialogOpen}
+        onClose={handleAnnouncementDialogClose}
+        maxWidth="md"
+        fullWidth
+        title="공지사항"
+      >
+        <DialogContent>
+          {selectedAnnouncement ? (
+            // 상세 보기
+            <Box>
+              <Button
+                onClick={() => setSelectedAnnouncement(null)}
+                sx={{ mb: 2 }}
+              >
+                ← 목록으로 돌아가기
+              </Button>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Chip
+                      label={getCategoryText(selectedAnnouncement.category)}
+                      color={getCategoryColor(selectedAnnouncement.category)}
+                      size="small"
+                      sx={{ mr: 1 }}
+                    />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: getPriorityColor(selectedAnnouncement.priority),
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      {selectedAnnouncement.priority === 'high' ? '[중요]' : ''}
+                    </Typography>
+                  </Box>
+                  <Typography variant="h6" gutterBottom>
+                    {selectedAnnouncement.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    작성자: {selectedAnnouncement.author} |
+                    작성일: {formatDate(selectedAnnouncement.createdAt)} |
+                    조회수: {selectedAnnouncement.views}
+                  </Typography>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                    {selectedAnnouncement.content}
+                  </Typography>
+
+                  {/* 첨부파일 표시 */}
+                  {selectedAnnouncement.attachments && selectedAnnouncement.attachments.length > 0 && (
+                    <>
+                      <Divider sx={{ my: 2 }} />
+                      <Typography variant="h6" gutterBottom>
+                        첨부파일
+                      </Typography>
+
+                      {/* 이미지 첨부파일들 */}
+                      {selectedAnnouncement.attachments.filter(att => att.isImage).map((attachment) => (
+                        <Box key={attachment.id} sx={{ mb: 2 }}>
+                          <img
+                            src={attachment.data}
+                            alt={attachment.name}
+                            style={{
+                              maxWidth: '100%',
+                              height: 'auto',
+                              borderRadius: '8px',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                            }}
+                          />
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                            {attachment.name}
+                          </Typography>
+                        </Box>
+                      ))}
+
+                      {/* 문서 첨부파일들 */}
+                      {selectedAnnouncement.attachments.filter(att => !att.isImage).length > 0 && (
+                        <List>
+                          {selectedAnnouncement.attachments.filter(att => !att.isImage).map((attachment) => (
+                            <ListItem key={attachment.id} sx={{ border: '1px solid #e0e0e0', borderRadius: 1, mb: 1 }}>
+                              <ListItemText
+                                primary={
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography>📄</Typography>
+                                    <Typography variant="body2">{attachment.name}</Typography>
+                                  </Box>
+                                }
+                                secondary={`크기: ${formatFileSize(attachment.size)}`}
+                              />
+                            </ListItem>
+                          ))}
+                        </List>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </Box>
+          ) : (
+            // 목록 보기
+            <Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                총 {getPublishedAnnouncements().length}개의 공지사항이 있습니다.
+              </Typography>
+              {getPublishedAnnouncements().length === 0 ? (
+                <Typography variant="body1" sx={{ textAlign: 'center', py: 4 }}>
+                  등록된 공지사항이 없습니다.
+                </Typography>
+              ) : (
+                <List>
+                  {getPublishedAnnouncements().map((announcement) => (
+                    <ListItem
+                      key={announcement.id}
+                      button
+                      onClick={() => handleAnnouncementItemClick(announcement)}
+                      sx={{
+                        border: '1px solid #e0e0e0',
+                        borderRadius: 1,
+                        mb: 1,
+                        '&:hover': {
+                          backgroundColor: '#f5f5f5'
+                        }
+                      }}
+                    >
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Chip
+                              label={getCategoryText(announcement.category)}
+                              color={getCategoryColor(announcement.category)}
+                              size="small"
+                            />
+                            {announcement.priority === 'high' && (
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: getPriorityColor(announcement.priority),
+                                  fontWeight: 'bold'
+                                }}
+                              >
+                                [중요]
+                              </Typography>
+                            )}
+                            <Typography variant="subtitle1" component="span">
+                              {announcement.title}
+                            </Typography>
+                          </Box>
+                        }
+                        secondary={
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                            <Typography variant="caption" color="text.secondary">
+                              작성자: {announcement.author}
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                              <Typography variant="caption" color="text.secondary">
+                                {formatDate(announcement.createdAt)}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                조회 {announcement.views}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        }
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleAnnouncementDialogClose}>
+            닫기
+          </Button>
+        </DialogActions>
+      </DraggableDialog>
     </Box>
   )
 }

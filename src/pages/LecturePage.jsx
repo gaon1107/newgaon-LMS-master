@@ -14,8 +14,6 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   Grid,
@@ -34,6 +32,7 @@ import {
   Search as SearchIcon,
   Schedule as ScheduleIcon
 } from '@mui/icons-material'
+import DraggableDialog from '../components/common/DraggableDialog'
 
 const LecturePage = () => {
   const { lectures, students, addLecture, updateLecture, deleteLecture, updateStudent } = useLMS()
@@ -340,7 +339,7 @@ const LecturePage = () => {
       </Card>
 
       {/* 강의 추가/수정 다이얼로그 */}
-      <Dialog
+      <DraggableDialog
         open={dialogOpen}
         onClose={(event, reason) => {
           if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
@@ -350,10 +349,8 @@ const LecturePage = () => {
         disableEscapeKeyDown
         maxWidth="md"
         fullWidth
+        title={editingLecture ? '강의 정보 수정' : '새 강의 추가'}
       >
-        <DialogTitle>
-          {editingLecture ? '강의 정보 수정' : '새 강의 추가'}
-        </DialogTitle>
         <DialogContent>
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
             <Grid container spacing={2}>
@@ -496,7 +493,7 @@ const LecturePage = () => {
             {editingLecture ? '수정' : '추가'}
           </Button>
         </DialogActions>
-      </Dialog>
+      </DraggableDialog>
     </Box>
   )
 }

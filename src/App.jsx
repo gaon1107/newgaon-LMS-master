@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthContext } from './contexts/AuthContext'
 import { LMSProvider } from './contexts/LMSContext'
 import { AttendanceProvider } from './contexts/AttendanceContext'
+import { AnnouncementProvider } from './contexts/AnnouncementContext'
 import HomePage from './pages/HomePage'
 import RegisterPage from './pages/RegisterPage'
 import PasswordResetPage from './pages/PasswordResetPage'
@@ -18,6 +19,8 @@ import SettingsPage from './pages/account/SettingsPage'
 import LicensePage from './pages/account/LicensePage'
 import PaymentPage from './pages/account/PaymentPage'
 import ProfilePage from './pages/account/ProfilePage'
+import MembershipPage from './pages/admin/MembershipPage'
+import AnnouncementPage from './pages/admin/AnnouncementPage'
 import Layout from './components/Layout'
 
 function AppContent() {
@@ -37,10 +40,19 @@ function AppContent() {
     '/account/settings',
     '/account/license',
     '/account/payment',
-    '/account/profile'
+    '/account/profile',
+    '/admin/membership',
+    '/admin/announcements'
+  ]
+
+  // 슈퍼관리자 전용 페이지
+  const superAdminRoutes = [
+    '/admin/membership',
+    '/admin/announcements'
   ]
 
   const isPrivateRoute = privateRoutes.includes(location.pathname)
+  const isSuperAdminRoute = superAdminRoutes.includes(location.pathname)
 
   if (isLoading) {
     return <div>로딩 중...</div>
@@ -51,10 +63,16 @@ function AppContent() {
     return <Navigate to="/" replace />
   }
 
+  // 슈퍼관리자가 아닌 사용자가 슈퍼관리자 페이지에 접근하려고 할 때
+  if (user && isSuperAdminRoute && user.role !== 'superadmin') {
+    return <Navigate to="/dashboard" replace />
+  }
+
   return (
-    <LMSProvider>
-      <AttendanceProvider>
-        <Routes>
+    <AnnouncementProvider>
+      <LMSProvider>
+        <AttendanceProvider>
+          <Routes>
         {/* 공개 페이지들 (센차와 동일한 구조) */}
         <Route path="/" element={<HomePage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -121,9 +139,22 @@ function AppContent() {
             <ProfilePage />
           </Layout>
         } />
-        </Routes>
-      </AttendanceProvider>
-    </LMSProvider>
+
+        {/* 슈퍼관리자 전용 페이지들 */}
+        <Route path="/admin/membership" element={
+          <Layout>
+            <MembershipPage />
+          </Layout>
+        } />
+        <Route path="/admin/announcements" element={
+          <Layout>
+            <AnnouncementPage />
+          </Layout>
+        } />
+          </Routes>
+        </AttendanceProvider>
+      </LMSProvider>
+    </AnnouncementProvider>
   )
 }
 

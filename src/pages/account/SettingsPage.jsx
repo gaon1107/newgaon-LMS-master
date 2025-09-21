@@ -11,8 +11,6 @@ import {
   Alert,
   Divider,
   Paper,
-  Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   IconButton
@@ -25,6 +23,7 @@ import {
   Launch as LaunchIcon,
   Close as CloseIcon
 } from '@mui/icons-material'
+import DraggableDialog from '../../components/common/DraggableDialog'
 
 const SettingsPage = () => {
   const { user } = useContext(AuthContext)
@@ -612,7 +611,7 @@ const SettingsPage = () => {
       </Grid>
 
       {/* 비밀번호 변경 다이얼로그 */}
-      <Dialog
+      <DraggableDialog
         open={passwordDialog}
         onClose={(event, reason) => {
           if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
@@ -622,16 +621,18 @@ const SettingsPage = () => {
         disableEscapeKeyDown
         maxWidth="sm"
         fullWidth
+        title={
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">
+              <LockIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+              비밀번호 변경
+            </Typography>
+            <IconButton onClick={() => setPasswordDialog(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        }
       >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">
-            <LockIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-            비밀번호 변경
-          </Typography>
-          <IconButton onClick={() => setPasswordDialog(false)}>
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
@@ -685,7 +686,7 @@ const SettingsPage = () => {
             {loading ? '변경 중...' : '변경'}
           </Button>
         </DialogActions>
-      </Dialog>
+      </DraggableDialog>
     </Box>
   )
 }

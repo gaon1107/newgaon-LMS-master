@@ -42,6 +42,18 @@ export const AuthProvider = ({ children }) => {
         return { success: true }
       }
 
+      // 슈퍼관리자 계정 (newgaon)
+      if (credentials.username === 'newgaon' && credentials.password === 'newgaon') {
+        const superAdminUser = {
+          id: 0,
+          username: 'newgaon',
+          name: '뉴가온 슈퍼관리자',
+          role: 'superadmin'
+        }
+        setUser(superAdminUser)
+        return { success: true }
+      }
+
       // 실제 API 호출
       const response = await authService.login(credentials)
 

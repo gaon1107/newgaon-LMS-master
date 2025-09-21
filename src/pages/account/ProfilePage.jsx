@@ -10,8 +10,6 @@ import {
   Grid,
   Avatar,
   IconButton,
-  Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   Alert,
@@ -34,6 +32,7 @@ import {
   LocationOn as LocationIcon,
   Business as BusinessIcon
 } from '@mui/icons-material'
+import DraggableDialog from '../../components/common/DraggableDialog'
 
 const ProfilePage = () => {
   const { user } = useContext(AuthContext)
@@ -391,7 +390,7 @@ const ProfilePage = () => {
       </Grid>
 
       {/* 비밀번호 변경 다이얼로그 */}
-      <Dialog
+      <DraggableDialog
         open={passwordDialog}
         onClose={(event, reason) => {
           if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
@@ -401,11 +400,13 @@ const ProfilePage = () => {
         disableEscapeKeyDown
         maxWidth="sm"
         fullWidth
+        title={
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <LockIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+            비밀번호 변경
+          </Box>
+        }
       >
-        <DialogTitle>
-          <LockIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-          비밀번호 변경
-        </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
@@ -459,7 +460,7 @@ const ProfilePage = () => {
             {loading ? '변경 중...' : '변경'}
           </Button>
         </DialogActions>
-      </Dialog>
+      </DraggableDialog>
     </Box>
   )
 }

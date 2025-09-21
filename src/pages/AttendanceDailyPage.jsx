@@ -10,8 +10,6 @@ import {
   Toolbar,
   Chip,
   Avatar,
-  Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   IconButton,
@@ -28,6 +26,7 @@ import {
   Close as CloseIcon,
   AccessTime as AccessTimeIcon
 } from '@mui/icons-material'
+import DraggableDialog from '../components/common/DraggableDialog'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
@@ -420,7 +419,7 @@ const AttendanceDailyPage = () => {
         </Card>
 
         {/* 학생 출입 이력 다이얼로그 */}
-        <Dialog
+        <DraggableDialog
           open={!!selectedStudent}
           onClose={(event, reason) => {
             if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
@@ -430,8 +429,7 @@ const AttendanceDailyPage = () => {
           disableEscapeKeyDown
           maxWidth="md"
           fullWidth
-        >
-          <DialogTitle>
+          title={
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Typography variant="h6">
                 {selectedStudent} 출입 이력
@@ -440,7 +438,8 @@ const AttendanceDailyPage = () => {
                 <CloseIcon />
               </IconButton>
             </Box>
-          </DialogTitle>
+          }
+        >
           <DialogContent>
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {format(selectedDate, 'yyyy년 MM월 dd일')} 출입 이력
@@ -499,7 +498,7 @@ const AttendanceDailyPage = () => {
               닫기
             </Button>
           </DialogActions>
-        </Dialog>
+        </DraggableDialog>
 
       </Box>
     </LocalizationProvider>

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useLMS } from '../../contexts/LMSContext'
 import {
-  Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   Button,
@@ -32,6 +30,7 @@ import {
   Close as CloseIcon,
   School as SchoolIcon
 } from '@mui/icons-material'
+import DraggableDialog from '../common/DraggableDialog'
 
 const GroupMessageModal = ({ open, onClose }) => {
   const { students } = useLMS()
@@ -216,7 +215,7 @@ const GroupMessageModal = ({ open, onClose }) => {
 
   return (
     <>
-      <Dialog
+      <DraggableDialog
         open={open}
         onClose={(event, reason) => {
           if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
@@ -229,13 +228,15 @@ const GroupMessageModal = ({ open, onClose }) => {
         PaperProps={{
           sx: { height: '80vh' }
         }}
+        title={
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">단체메세지 발송</Typography>
+            <IconButton onClick={onClose}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        }
       >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">단체메세지 발송</Typography>
-          <IconButton onClick={onClose}>
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
 
         <DialogContent sx={{ p: 3 }}>
           <Grid container spacing={3} sx={{ height: '100%' }}>
@@ -417,10 +418,10 @@ const GroupMessageModal = ({ open, onClose }) => {
             메시지 발송
           </Button>
         </DialogActions>
-      </Dialog>
+      </DraggableDialog>
 
       {/* 발송 확인 다이얼로그 */}
-      <Dialog
+      <DraggableDialog
         open={previewDialog}
         onClose={(event, reason) => {
           if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
@@ -430,8 +431,8 @@ const GroupMessageModal = ({ open, onClose }) => {
         disableEscapeKeyDown
         maxWidth="sm"
         fullWidth
+        title="메시지 발송 확인"
       >
-        <DialogTitle>메시지 발송 확인</DialogTitle>
         <DialogContent>
           <Alert severity="info" sx={{ mb: 2 }}>
             아래 내용으로 메시지를 발송하시겠습니까?
@@ -481,7 +482,7 @@ const GroupMessageModal = ({ open, onClose }) => {
             {loading ? '발송 중...' : '발송하기'}
           </Button>
         </DialogActions>
-      </Dialog>
+      </DraggableDialog>
     </>
   )
 }

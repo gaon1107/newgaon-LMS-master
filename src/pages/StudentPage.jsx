@@ -14,8 +14,6 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   Grid,
@@ -36,6 +34,7 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon
 } from '@mui/icons-material'
+import DraggableDialog from '../components/common/DraggableDialog'
 
 const StudentPage = () => {
   const { students, lectures, addStudent, updateStudent, deleteStudent } = useLMS()
@@ -422,7 +421,7 @@ const StudentPage = () => {
       </Card>
 
       {/* 학생 추가/수정 다이얼로그 */}
-      <Dialog
+      <DraggableDialog
         open={dialogOpen}
         onClose={(event, reason) => {
           if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
@@ -432,10 +431,8 @@ const StudentPage = () => {
         disableEscapeKeyDown
         maxWidth="md"
         fullWidth
+        title={editingStudent ? '학생 정보 수정' : '새 학생 추가'}
       >
-        <DialogTitle>
-          {editingStudent ? '학생 정보 수정' : '새 학생 추가'}
-        </DialogTitle>
         <DialogContent>
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
             <Grid container spacing={2}>
@@ -803,10 +800,10 @@ const StudentPage = () => {
             {editingStudent ? '수정' : '추가'}
           </Button>
         </DialogActions>
-      </Dialog>
+      </DraggableDialog>
 
       {/* 사진 선택 옵션 다이얼로그 */}
-      <Dialog
+      <DraggableDialog
         open={photoDialogOpen}
         onClose={(event, reason) => {
           if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
@@ -814,8 +811,8 @@ const StudentPage = () => {
           }
         }}
         disableEscapeKeyDown
+        title="사진 선택 방법"
       >
-        <DialogTitle>사진 선택 방법</DialogTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
             학생 사진을 등록할 방법을 선택해주세요.
@@ -842,10 +839,10 @@ const StudentPage = () => {
         <DialogActions>
           <Button onClick={() => setPhotoDialogOpen(false)}>취소</Button>
         </DialogActions>
-      </Dialog>
+      </DraggableDialog>
 
       {/* 카메라 촬영 다이얼로그 */}
-      <Dialog
+      <DraggableDialog
         open={showCamera}
         onClose={(event, reason) => {
           if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
@@ -855,8 +852,8 @@ const StudentPage = () => {
         disableEscapeKeyDown
         maxWidth="md"
         fullWidth
+        title="카메라로 사진 촬영"
       >
-        <DialogTitle>카메라로 사진 촬영</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
             <video
@@ -895,7 +892,7 @@ const StudentPage = () => {
             </Box>
           </Box>
         </DialogContent>
-      </Dialog>
+      </DraggableDialog>
     </Box>
   )
 }
