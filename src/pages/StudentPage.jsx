@@ -80,9 +80,10 @@ const StudentPage = () => {
     ...lectures.map(lecture => ({
       id: lecture.id,
       name: lecture.name,
-      fee: lecture.fee
+      fee: lecture.fee || 0
     }))
   ]
+
 
   const mockDepartments = [
     { id: 'math', name: '수학과' },
@@ -125,11 +126,42 @@ const StudentPage = () => {
   const handleOpenDialog = (student = null) => {
     if (student) {
       setEditingStudent(student)
-      setFormData(student)
+
+      // 학생 데이터를 폼 데이터 구조에 맞게 변환
+      const formattedData = {
+        name: student.name || '',
+        school: student.school || '',
+        grade: student.grade || '',
+        department: student.department || '',
+        phone: student.phone || '',
+        parentPhone: student.parentPhone || '',
+        email: student.email || '',
+        class: student.class || '',
+        birthDate: student.birthDate || '',
+        address: student.address || '',
+        notes: student.notes || '',
+        // 수강료와 클래스 정보
+        selectedClasses: student.selectedClasses || [],
+        classFee: student.classFee || 0,
+        paymentDueDate: student.paymentDueDate || '',
+        sendPaymentNotification: student.sendPaymentNotification !== undefined ? student.sendPaymentNotification : true,
+        profileImage: student.profileImage || null,
+        capturedImage: student.capturedImage || null,
+        // 자동 메시지 설정
+        autoMessages: {
+          attendance: student.autoMessages?.attendance !== undefined ? student.autoMessages.attendance : true,
+          outing: student.autoMessages?.outing || false,
+          imagePost: student.autoMessages?.imagePost || false,
+          studyMonitoring: student.autoMessages?.studyMonitoring || false
+        }
+      }
+
+      setFormData(formattedData)
     } else {
       setEditingStudent(null)
       resetForm()
     }
+
     setDialogOpen(true)
   }
 
@@ -967,7 +999,7 @@ const StudentPage = () => {
           <Button
             onClick={handleSubmit}
             variant="contained"
-            disabled={!formData.name || !formData.parentPhone || formData.selectedClasses.length === 0 || !formData.paymentDueDate}
+            disabled={editingStudent ? false : (!formData.name || !formData.parentPhone || formData.selectedClasses.length === 0 || !formData.paymentDueDate)}
           >
             {editingStudent ? '수정' : '추가'}
           </Button>

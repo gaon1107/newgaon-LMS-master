@@ -40,7 +40,10 @@ import {
   Person as PersonIcon,
   AdminPanelSettings as AdminIcon,
   Group as MembershipIcon,
-  Announcement as AnnouncementIcon
+  Announcement as AnnouncementIcon,
+  Psychology as StudyIcon,
+  Assessment as DailyStudyIcon,
+  PersonOutline as StudentStudyIcon
 } from '@mui/icons-material'
 import { AuthContext } from '../contexts/AuthContext'
 
@@ -54,6 +57,7 @@ const Layout = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [anchorEl, setAnchorEl] = useState(null)
   const [attendanceMenuOpen, setAttendanceMenuOpen] = useState(false)
+  const [studyMenuOpen, setStudyMenuOpen] = useState(false)
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const [adminMenuOpen, setAdminMenuOpen] = useState(false)
 
@@ -67,6 +71,15 @@ const Layout = ({ children }) => {
       submenu: [
         { text: '일별 출석', icon: <TodayIcon />, path: '/attendance/daily' },
         { text: '월별 출석', icon: <CalendarIcon />, path: '/attendance/monthly' }
+      ]
+    },
+    {
+      text: '학습관제 현황',
+      icon: <StudyIcon />,
+      hasSubmenu: true,
+      submenu: [
+        { text: '일일학습현황', icon: <DailyStudyIcon />, path: '/study/daily' },
+        { text: '원생별 현황', icon: <StudentStudyIcon />, path: '/study/student' }
       ]
     },
     { text: '학생 관리', icon: <StudentsIcon />, path: '/students' },
@@ -113,6 +126,8 @@ const Layout = ({ children }) => {
     if (hasSubmenu) {
       if (path === '출결 관리') {
         setAttendanceMenuOpen(!attendanceMenuOpen)
+      } else if (path === '학습관제 현황') {
+        setStudyMenuOpen(!studyMenuOpen)
       } else if (path === '계정 관리') {
         setAccountMenuOpen(!accountMenuOpen)
       } else if (path === '슈퍼관리자') {
@@ -166,6 +181,8 @@ const Layout = ({ children }) => {
                 {item.hasSubmenu && (
                   item.text === '출결 관리' ? (
                     attendanceMenuOpen ? <ExpandLess /> : <ExpandMore />
+                  ) : item.text === '학습관제 현황' ? (
+                    studyMenuOpen ? <ExpandLess /> : <ExpandMore />
                   ) : item.text === '계정 관리' ? (
                     accountMenuOpen ? <ExpandLess /> : <ExpandMore />
                   ) : item.text === '슈퍼관리자' ? (
@@ -176,6 +193,25 @@ const Layout = ({ children }) => {
             </ListItem>
             {item.hasSubmenu && item.text === '출결 관리' && (
               <Collapse in={attendanceMenuOpen} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  {item.submenu.map((subItem) => (
+                    <ListItemButton
+                      key={subItem.text}
+                      sx={{ pl: 4 }}
+                      selected={location.pathname === subItem.path}
+                      onClick={() => handleSubmenuClick(subItem.path)}
+                    >
+                      <ListItemIcon>
+                        {subItem.icon}
+                      </ListItemIcon>
+                      <ListItemText primary={subItem.text} />
+                    </ListItemButton>
+                  ))}
+                </List>
+              </Collapse>
+            )}
+            {item.hasSubmenu && item.text === '학습관제 현황' && (
+              <Collapse in={studyMenuOpen} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
                   {item.submenu.map((subItem) => (
                     <ListItemButton

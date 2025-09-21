@@ -497,10 +497,10 @@ const TeacherPage = () => {
           <Button onClick={handleCloseDialog}>
             취소
           </Button>
-          <Button 
-            onClick={handleSubmit} 
+          <Button
+            onClick={handleSubmit}
             variant="contained"
-            disabled={!formData.name || !formData.phone || !formData.subjects}
+            disabled={editingTeacher ? false : (!formData.name || !formData.phone || !formData.subjects)}
           >
             {editingTeacher ? '수정' : '추가'}
           </Button>

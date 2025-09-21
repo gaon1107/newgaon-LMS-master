@@ -18,7 +18,8 @@
     "react-hook-form": "^7.48.2",
     "react-query": "^3.39.3",
     "react-router-dom": "^6.20.1",
-    "recharts": "^2.8.0"
+    "recharts": "^2.8.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/js-cookie": "^3.0.6",

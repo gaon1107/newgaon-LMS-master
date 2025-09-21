@@ -1057,7 +1057,7 @@ const MessagePage = () => {
           <Button
             variant="contained"
             onClick={handleTemplateSubmit}
-            disabled={!templateForm.name || !templateForm.type || !templateForm.template}
+            disabled={templateDialog.editing ? false : (!templateForm.name || !templateForm.type || !templateForm.template)}
           >
             {templateDialog.editing ? '수정' : '추가'}
           </Button>

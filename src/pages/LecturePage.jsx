@@ -639,10 +639,10 @@ const LecturePage = () => {
           <Button onClick={handleCloseDialog}>
             취소
           </Button>
-          <Button 
-            onClick={handleSubmit} 
+          <Button
+            onClick={handleSubmit}
             variant="contained"
-            disabled={!formData.name || !formData.teacher || !formData.subject || !formData.schedule || !formData.capacity || !formData.fee}
+            disabled={editingLecture ? false : (!formData.name || !formData.teacher || !formData.subject || !formData.schedule || !formData.capacity || !formData.fee)}
           >
             {editingLecture ? '수정' : '추가'}
           </Button>

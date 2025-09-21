@@ -15,6 +15,8 @@ import TeacherPage from './pages/TeacherPage'
 import LecturePage from './pages/LecturePage'
 import MessagePage from './pages/MessagePage'
 import FilePage from './pages/FilePage'
+import StudyDailyPage from './pages/study/StudyDailyPage'
+import StudentStudyPage from './pages/study/StudentStudyPage'
 import SettingsPage from './pages/account/SettingsPage'
 import LicensePage from './pages/account/LicensePage'
 import PaymentPage from './pages/account/PaymentPage'
@@ -32,6 +34,8 @@ function AppContent() {
     '/dashboard',
     '/attendance/daily',
     '/attendance/monthly',
+    '/study/daily',
+    '/study/student',
     '/students',
     '/teachers',
     '/lectures',
@@ -92,6 +96,16 @@ function AppContent() {
         <Route path="/attendance/monthly" element={
           <Layout>
             <AttendanceMonthlyPage />
+          </Layout>
+        } />
+        <Route path="/study/daily" element={
+          <Layout>
+            <StudyDailyPage />
+          </Layout>
+        } />
+        <Route path="/study/student" element={
+          <Layout>
+            <StudentStudyPage />
           </Layout>
         } />
         <Route path="/students" element={

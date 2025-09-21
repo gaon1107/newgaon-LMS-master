@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useAttendance } from '../../contexts/AttendanceContext'
 import {
   Box,
   Typography,
@@ -24,52 +25,64 @@ import {
 } from '@mui/icons-material'
 
 const RecentHistory = () => {
+  // AttendanceContext 안전하게 접근
+  let attendanceContext = null
+  let attendanceRecords = []
+  try {
+    attendanceContext = useAttendance()
+    attendanceRecords = attendanceContext?.attendanceRecords || []
+  } catch (error) {
+    console.warn('AttendanceContext를 사용할 수 없습니다:', error)
+  }
   const [autoRefresh, setAutoRefresh] = useState(false)
   const [lastUpdate, setLastUpdate] = useState(new Date())
 
-  // 임시 출결 내역 데이터
-  const [historyData, setHistoryData] = useState([
-    {
-      id: 1,
-      studentName: '김철수',
-      status: 'present',
-      statusDescription: '등원',
-      timestamp: '2024-01-15 09:15:23',
-      profileImage: '/api/placeholder/40/40'
-    },
-    {
-      id: 2,
-      studentName: '박민수',
-      status: 'present',
-      statusDescription: '등원',
-      timestamp: '2024-01-15 08:45:12',
-      profileImage: '/api/placeholder/40/40'
-    },
-    {
-      id: 3,
-      studentName: '최지은',
-      status: 'early_leave',
-      statusDescription: '조퇴',
-      timestamp: '2024-01-15 14:30:45',
-      profileImage: '/api/placeholder/40/40'
-    },
-    {
-      id: 4,
-      studentName: '한미래',
-      status: 'late',
-      statusDescription: '지각',
-      timestamp: '2024-01-15 10:15:33',
-      profileImage: '/api/placeholder/40/40'
-    },
-    {
-      id: 5,
-      studentName: '정현우',
-      status: 'present',
-      statusDescription: '등원',
-      timestamp: '2024-01-15 09:00:15',
-      profileImage: '/api/placeholder/40/40'
+  // 실제 출결 데이터에서 최근 5개 가져오기
+  const getRecentHistory = () => {
+    if (!attendanceRecords || attendanceRecords.length === 0) {
+      return []
     }
-  ])
+
+    // 최근 기록 순으로 정렬하고 상위 5개 선택
+    return attendanceRecords
+      .sort((a, b) => new Date(b.taggedAt) - new Date(a.taggedAt))
+      .slice(0, 5)
+      .map(record => ({
+        id: record.id,
+        studentName: record.studentName,
+        status: getStatusFromDescription(record.stateDescription),
+        statusDescription: record.stateDescription,
+        timestamp: record.taggedAt,
+        profileImage: record.thumbnailData || '/api/placeholder/40/40'
+      }))
+  }
+
+  // 상태 설명에서 status 변환
+  const getStatusFromDescription = (description) => {
+    switch (description) {
+      case '등원':
+      case '입실':
+        return 'present'
+      case '하원':
+      case '퇴실':
+        return 'exit'
+      case '지각':
+        return 'late'
+      case '조퇴':
+        return 'early_leave'
+      default:
+        return 'present'
+    }
+  }
+
+  // historyData를 실시간으로 업데이트
+  const [historyData, setHistoryData] = useState([])
+
+  // attendanceRecords가 변경될 때마다 historyData 업데이트
+  useEffect(() => {
+    setHistoryData(getRecentHistory())
+    setLastUpdate(new Date())
+  }, [attendanceRecords])
 
   useEffect(() => {
     let interval = null
@@ -87,6 +100,8 @@ const RecentHistory = () => {
     switch (status) {
       case 'present':
         return <CheckCircleIcon sx={{ color: '#4caf50' }} />
+      case 'exit':
+        return <ExitIcon sx={{ color: '#2196f3' }} />
       case 'absent':
         return <CancelIcon sx={{ color: '#f44336' }} />
       case 'late':
@@ -110,7 +125,18 @@ const RecentHistory = () => {
   }
 
   const handleRefresh = () => {
-    setLastUpdate(new Date())
+    try {
+      // AttendanceContext에서 최신 데이터를 다시 가져와서 업데이트
+      if (attendanceContext?.attendanceRecords) {
+        setHistoryData(getRecentHistory())
+      }
+      setLastUpdate(new Date())
+    } catch (error) {
+      console.warn('출결 데이터 새로고침 중 오류:', error)
+      // 컨텍스트가 없어도 로컬 상태는 업데이트
+      setHistoryData(getRecentHistory())
+      setLastUpdate(new Date())
+    }
   }
 
   const handleAutoRefreshToggle = (event) => {
