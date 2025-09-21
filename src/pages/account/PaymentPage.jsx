@@ -4,404 +4,541 @@ import {
   Typography,
   Card,
   CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip,
   Button,
-  Grid,
-  TextField,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
   FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  IconButton,
-  Tooltip,
-  Paper,
-  Divider
+  FormLabel,
+  Grid,
+  Alert,
+  Chip,
+  Divider,
+  TextField,
+  DialogContent,
+  DialogActions
 } from '@mui/material'
 import {
   Payment as PaymentIcon,
-  FileDownload as DownloadIcon,
-  Search as SearchIcon,
-  Receipt as ReceiptIcon,
-  CreditCard as CardIcon,
-  AccountBalance as BankIcon,
-  Phone as PhoneIcon
+  Schedule as ScheduleIcon,
+  Star as StarIcon,
+  Info as InfoIcon
 } from '@mui/icons-material'
+import DraggableDialog from '../../components/common/DraggableDialog'
 
 const PaymentPage = () => {
-  const [payments, setPayments] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [dateRange, setDateRange] = useState({ start: '', end: '' })
+  const [selectedProduct, setSelectedProduct] = useState('')
+  const [selectedTerm, setSelectedTerm] = useState('')
+  const [selectedMethod, setSelectedMethod] = useState('card')
+  const [promotionCode, setPromotionCode] = useState('')
+  const [isPromotionApplied, setIsPromotionApplied] = useState(false)
+  const [paymentDialog, setPaymentDialog] = useState(false)
+  const [paymentHistory, setPaymentHistory] = useState([])
 
-  // 임시 결제 데이터
-  const mockPayments = [
+  // 상품 정의
+  const products = [
     {
-      id: 'PAY001',
-      date: '2024-12-15',
-      product: '가온 출결 시스템 Pro',
-      period: '1년',
-      amount: 480000,
-      method: 'card',
-      methodDetail: '신한카드 1234',
-      status: 'completed',
-      receiptUrl: '#',
-      description: '연간 라이선스'
+      id: 'smart_attendance',
+      name: '스마트출결',
+      description: '기본 출결 관리 서비스',
+      basePrice: 5000, // 월 기본 가격 (부가세 별도)
+      icon: '📚',
+      features: [
+        '실시간 출결 관리',
+        '학부모 알림 서비스',
+        '출결 통계 및 리포트',
+        '기본 메시지 발송'
+      ]
     },
     {
-      id: 'PAY002',
-      date: '2024-11-20',
-      product: 'SMS 서비스 패키지',
-      period: '월간',
-      amount: 50000,
-      method: 'bank',
-      methodDetail: '국민은행 자동이체',
-      status: 'completed',
-      receiptUrl: '#',
-      description: '월 5,000건 SMS'
-    },
-    {
-      id: 'PAY003',
-      date: '2024-10-25',
-      product: '추가 저장공간',
-      period: '월간',
-      amount: 30000,
-      method: 'phone',
-      methodDetail: '휴대폰 결제',
-      status: 'completed',
-      receiptUrl: '#',
-      description: '10GB 추가 저장공간'
-    },
-    {
-      id: 'PAY004',
-      date: '2024-10-01',
-      product: '가온 출결 시스템 Pro',
-      period: '월간',
-      amount: 50000,
-      method: 'card',
-      methodDetail: '삼성카드 5678',
-      status: 'failed',
-      receiptUrl: null,
-      description: '월간 라이선스'
-    },
-    {
-      id: 'PAY005',
-      date: '2024-09-15',
-      product: 'SMS 서비스 패키지',
-      period: '월간',
-      amount: 50000,
-      method: 'bank',
-      methodDetail: '우리은행 자동이체',
-      status: 'pending',
-      receiptUrl: null,
-      description: '월 5,000건 SMS'
+      id: 'smart_attendance_plus',
+      name: '스마트출결+학습관제',
+      description: '출결 관리 + 학습 관제 통합 서비스',
+      basePrice: 10000, // 월 기본 가격 (부가세 별도)
+      icon: '🎓',
+      features: [
+        '실시간 출결 관리',
+        '학부모 알림 서비스',
+        '출결 통계 및 리포트',
+        '학습 진도 관리',
+        '성취도 분석',
+        '개별 학습 리포트',
+        '고급 메시지 발송'
+      ],
+      popular: true
     }
   ]
 
-  useEffect(() => {
-    // 결제 내역 로드
-    const loadPayments = async () => {
-      setLoading(true)
-      try {
-        // API 호출 대신 임시 데이터 사용
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        setPayments(mockPayments)
-      } catch (error) {
-        console.error('결제 내역 로드 실패:', error)
-      } finally {
-        setLoading(false)
+  // 결제 기간 정의
+  const terms = [
+    {
+      id: '1month',
+      name: '1개월',
+      months: 1,
+      discount: 0,
+      description: '1개월 단위 결제'
+    },
+    {
+      id: '3months',
+      name: '3개월',
+      months: 3,
+      discount: 0.05, // 5% 할인
+      description: '3개월 단위 결제 (5% 할인)'
+    },
+    {
+      id: '6months',
+      name: '6개월',
+      months: 6,
+      discount: 0.10, // 10% 할인
+      description: '6개월 단위 결제 (10% 할인)'
+    },
+    {
+      id: '12months',
+      name: '1년',
+      months: 12,
+      discount: 0.15, // 15% 할인
+      description: '1년 단위 결제 (15% 할인)',
+      popular: true
+    }
+  ]
+
+  // 결제 방법 정의
+  const paymentMethods = [
+    { id: 'card', name: '신용카드', description: '신용카드 결제' },
+    { id: 'transfer', name: '계좌이체', description: '실시간 계좌이체' },
+    { id: 'virtual', name: '가상계좌', description: '가상계좌 입금' }
+  ]
+
+  // 가격 계산
+  const calculatePrice = () => {
+    if (!selectedProduct || !selectedTerm) return { subtotal: 0, tax: 0, total: 0 }
+
+    const product = products.find(p => p.id === selectedProduct)
+    const term = terms.find(t => t.id === selectedTerm)
+
+    if (!product || !term) return { subtotal: 0, tax: 0, total: 0 }
+
+    const baseAmount = product.basePrice * term.months
+    const discountAmount = baseAmount * term.discount
+    const subtotal = baseAmount - discountAmount
+    const tax = Math.round(subtotal * 0.1) // 부가세 10%
+    const total = subtotal + tax
+
+    return {
+      subtotal: Math.round(subtotal),
+      tax,
+      total,
+      discount: Math.round(discountAmount),
+      originalPrice: baseAmount
+    }
+  }
+
+  const price = calculatePrice()
+
+  // 프로모션 코드 적용
+  const handlePromotionApply = () => {
+    if (promotionCode.trim()) {
+      // 간단한 프로모션 코드 검증 (실제로는 서버에서 검증)
+      if (promotionCode.toUpperCase() === 'WELCOME10') {
+        setIsPromotionApplied(true)
+        alert('프로모션 코드가 적용되었습니다! (10% 추가 할인)')
+      } else {
+        alert('유효하지 않은 프로모션 코드입니다.')
       }
     }
+  }
 
-    loadPayments()
-  }, [])
+  const handlePromotionCancel = () => {
+    setPromotionCode('')
+    setIsPromotionApplied(false)
+  }
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'completed': return 'success'
-      case 'pending': return 'warning'
-      case 'failed': return 'error'
-      default: return 'default'
+  // 결제 처리
+  const handlePayment = () => {
+    if (!selectedProduct || !selectedTerm) {
+      alert('상품과 결제 기간을 선택해주세요.')
+      return
     }
+    setPaymentDialog(true)
   }
 
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'completed': return '결제완료'
-      case 'pending': return '결제대기'
-      case 'failed': return '결제실패'
-      default: return '알 수 없음'
+  const processPayment = () => {
+    // 실제 결제 처리 로직
+    const product = products.find(p => p.id === selectedProduct)
+    const term = terms.find(t => t.id === selectedTerm)
+    const method = paymentMethods.find(m => m.id === selectedMethod)
+
+    const newPayment = {
+      id: Date.now(),
+      product: product.name,
+      term: term.name,
+      method: method.name,
+      amount: price.total,
+      date: new Date().toISOString().split('T')[0],
+      status: 'completed'
     }
+
+    setPaymentHistory(prev => [newPayment, ...prev])
+    setPaymentDialog(false)
+
+    // 폼 초기화
+    setSelectedProduct('')
+    setSelectedTerm('')
+    setPromotionCode('')
+    setIsPromotionApplied(false)
+
+    alert('결제가 완료되었습니다!')
   }
-
-  const getMethodIcon = (method) => {
-    switch (method) {
-      case 'card': return <CardIcon />
-      case 'bank': return <BankIcon />
-      case 'phone': return <PhoneIcon />
-      default: return <PaymentIcon />
-    }
-  }
-
-  const getMethodText = (method) => {
-    switch (method) {
-      case 'card': return '신용카드'
-      case 'bank': return '계좌이체'
-      case 'phone': return '휴대폰결제'
-      default: return '기타'
-    }
-  }
-
-  const filteredPayments = payments.filter(payment => {
-    const matchesSearch = payment.product.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         payment.id.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || payment.status === statusFilter
-
-    return matchesSearch && matchesStatus
-  })
-
-  const handleDownloadReceipt = (payment) => {
-    // 영수증 다운로드 로직
-    console.log('영수증 다운로드:', payment.id)
-    // 실제로는 PDF 생성 또는 API 호출
-    alert(`${payment.id} 영수증을 다운로드합니다.`)
-  }
-
-  const totalAmount = filteredPayments
-    .filter(p => p.status === 'completed')
-    .reduce((sum, payment) => sum + payment.amount, 0)
 
   return (
     <Box>
       <Typography variant="h4" component="h1" gutterBottom>
-        <PaymentIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-        결제 내역
+        결제 관리
       </Typography>
 
-      {/* 통계 요약 */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper sx={{ p: 2, textAlign: 'center' }}>
-            <Typography variant="h6" color="primary">
-              {filteredPayments.length}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              총 결제건수
-            </Typography>
-          </Paper>
+      <Grid container spacing={3}>
+        {/* 왼쪽: 결제 폼 */}
+        <Grid item xs={12} md={8}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                <PaymentIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                결제 정보
+              </Typography>
+
+              {/* 프로모션 코드 */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  프로모션 코드 <InfoIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                </Typography>
+                <Grid container spacing={1} alignItems="center">
+                  <Grid item xs>
+                    <TextField
+                      size="small"
+                      placeholder="프로모션 코드를 입력하세요"
+                      value={promotionCode}
+                      onChange={(e) => setPromotionCode(e.target.value)}
+                      disabled={isPromotionApplied}
+                    />
+                  </Grid>
+                  <Grid item>
+                    {!isPromotionApplied ? (
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={handlePromotionApply}
+                        disabled={!promotionCode.trim()}
+                      >
+                        적용
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        color="error"
+                        onClick={handlePromotionCancel}
+                      >
+                        취소
+                      </Button>
+                    )}
+                  </Grid>
+                </Grid>
+                {isPromotionApplied && (
+                  <Alert severity="success" sx={{ mt: 1 }}>
+                    프로모션 코드가 적용되었습니다!
+                  </Alert>
+                )}
+              </Box>
+
+              {/* 상품 선택 */}
+              <FormControl component="fieldset" sx={{ mb: 3, width: '100%' }}>
+                <FormLabel component="legend">
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    상품 선택 *
+                  </Typography>
+                </FormLabel>
+                <RadioGroup
+                  value={selectedProduct}
+                  onChange={(e) => setSelectedProduct(e.target.value)}
+                >
+                  {products.map((product) => (
+                    <Box key={product.id} sx={{ mb: 2 }}>
+                      <FormControlLabel
+                        value={product.id}
+                        control={<Radio />}
+                        label={
+                          <Box sx={{ ml: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography variant="body1" fontWeight="bold">
+                                {product.icon} {product.name}
+                              </Typography>
+                              {product.popular && (
+                                <Chip
+                                  label="인기"
+                                  size="small"
+                                  color="primary"
+                                  icon={<StarIcon />}
+                                />
+                              )}
+                              <Typography variant="body2" color="primary" fontWeight="bold">
+                                월 {product.basePrice.toLocaleString()}원 (부가세별도)
+                              </Typography>
+                            </Box>
+                            <Typography variant="body2" color="text.secondary">
+                              {product.description}
+                            </Typography>
+                            <Box sx={{ mt: 1 }}>
+                              {product.features.map((feature, index) => (
+                                <Chip
+                                  key={index}
+                                  label={feature}
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{ mr: 0.5, mb: 0.5 }}
+                                />
+                              ))}
+                            </Box>
+                          </Box>
+                        }
+                        sx={{ alignItems: 'flex-start', mb: 1 }}
+                      />
+                    </Box>
+                  ))}
+                </RadioGroup>
+              </FormControl>
+
+              {/* 사용 기간 선택 */}
+              <FormControl component="fieldset" sx={{ mb: 3, width: '100%' }}>
+                <FormLabel component="legend">
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    사용 기간 *
+                  </Typography>
+                </FormLabel>
+                <RadioGroup
+                  value={selectedTerm}
+                  onChange={(e) => setSelectedTerm(e.target.value)}
+                >
+                  <Grid container spacing={1}>
+                    {terms.map((term) => (
+                      <Grid item xs={12} sm={6} key={term.id}>
+                        <FormControlLabel
+                          value={term.id}
+                          control={<Radio />}
+                          label={
+                            <Box sx={{ ml: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="body1" fontWeight="bold">
+                                  <ScheduleIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                                  {term.name}
+                                </Typography>
+                                {term.popular && (
+                                  <Chip
+                                    label="추천"
+                                    size="small"
+                                    color="secondary"
+                                    icon={<StarIcon />}
+                                  />
+                                )}
+                                {term.discount > 0 && (
+                                  <Chip
+                                    label={`${(term.discount * 100)}% 할인`}
+                                    size="small"
+                                    color="error"
+                                  />
+                                )}
+                              </Box>
+                              <Typography variant="body2" color="text.secondary">
+                                {term.description}
+                              </Typography>
+                            </Box>
+                          }
+                          sx={{ alignItems: 'flex-start', mb: 1 }}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </RadioGroup>
+              </FormControl>
+
+              {/* 결제 방법 선택 */}
+              <FormControl component="fieldset" sx={{ mb: 3, width: '100%' }}>
+                <FormLabel component="legend">
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    결제 방법 *
+                  </Typography>
+                </FormLabel>
+                <RadioGroup
+                  value={selectedMethod}
+                  onChange={(e) => setSelectedMethod(e.target.value)}
+                  row
+                >
+                  {paymentMethods.map((method) => (
+                    <FormControlLabel
+                      key={method.id}
+                      value={method.id}
+                      control={<Radio />}
+                      label={method.name}
+                    />
+                  ))}
+                </RadioGroup>
+              </FormControl>
+
+              {/* 결제 금액 */}
+              {selectedProduct && selectedTerm && (
+                <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                  <Typography variant="h6" gutterBottom>
+                    결제 금액
+                  </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography>기본 금액:</Typography>
+                    <Typography>{price.originalPrice?.toLocaleString()}원</Typography>
+                  </Box>
+                  {price.discount > 0 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                      <Typography color="error">기간 할인:</Typography>
+                      <Typography color="error">-{price.discount.toLocaleString()}원</Typography>
+                    </Box>
+                  )}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography>소계:</Typography>
+                    <Typography>{price.subtotal.toLocaleString()}원</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography>부가세 (10%):</Typography>
+                    <Typography>{price.tax.toLocaleString()}원</Typography>
+                  </Box>
+                  <Divider sx={{ my: 1 }} />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="h6" fontWeight="bold">총 결제 금액:</Typography>
+                    <Typography variant="h6" fontWeight="bold" color="primary">
+                      {price.total.toLocaleString()}원
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+
+              <Button
+                variant="contained"
+                size="large"
+                fullWidth
+                onClick={handlePayment}
+                disabled={!selectedProduct || !selectedTerm}
+                startIcon={<PaymentIcon />}
+              >
+                결제하기
+              </Button>
+            </CardContent>
+          </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper sx={{ p: 2, textAlign: 'center' }}>
-            <Typography variant="h6" color="success.main">
-              {filteredPayments.filter(p => p.status === 'completed').length}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              결제완료
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper sx={{ p: 2, textAlign: 'center' }}>
-            <Typography variant="h6" color="warning.main">
-              {filteredPayments.filter(p => p.status === 'pending').length}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              결제대기
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper sx={{ p: 2, textAlign: 'center' }}>
-            <Typography variant="h6" color="primary">
-              {totalAmount.toLocaleString()}원
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              총 결제금액
-            </Typography>
-          </Paper>
+
+        {/* 오른쪽: 결제 안내 및 이전 결제 내역 */}
+        <Grid item xs={12} md={4}>
+          {/* 최근 결제 내역 */}
+          {paymentHistory.length > 0 && (
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  최근 결제 내역
+                </Typography>
+                {paymentHistory.slice(0, 3).map((payment) => (
+                  <Box key={payment.id} sx={{ mb: 2, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
+                    <Typography variant="body2" fontWeight="bold">
+                      {payment.product} {payment.term}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      [{payment.method}] {payment.amount.toLocaleString()}원
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {payment.date} 결제 완료
+                    </Typography>
+                  </Box>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 결제 안내 */}
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                결제 안내
+              </Typography>
+              <Box component="ol" sx={{ pl: 2, m: 0 }}>
+                <Box component="li" sx={{ mb: 1 }}>
+                  <Typography variant="body2">
+                    회원 가입 후 30일 무료 사용이 가능합니다.
+                  </Typography>
+                </Box>
+                <Box component="li" sx={{ mb: 1 }}>
+                  <Typography variant="body2">
+                    결제 신청이 완료되면 홈 화면에 잔여 기간이 갱신되니 꼭 확인 바랍니다.
+                  </Typography>
+                </Box>
+                <Box component="li" sx={{ mb: 1 }}>
+                  <Typography variant="body2">
+                    상품 변경 시에는 고객센터로 별도 문의를 주세요.
+                  </Typography>
+                </Box>
+                <Box component="li" sx={{ mb: 1 }}>
+                  <Typography variant="body2">
+                    프로모션 코드를 입력 후 결제 진행하시면 무료 사용 기한 연장 서비스가 적용됩니다.
+                  </Typography>
+                </Box>
+                <Box component="li">
+                  <Typography variant="body2">
+                    부가세는 별도로 부과되며, 세금계산서 발행이 가능합니다.
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
 
-      {/* 검색 및 필터 */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={4}>
-              <TextField
-                fullWidth
-                label="검색"
-                placeholder="상품명 또는 주문번호 검색"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                  startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth>
-                <InputLabel>결제상태</InputLabel>
-                <Select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  label="결제상태"
-                >
-                  <MenuItem value="all">전체</MenuItem>
-                  <MenuItem value="completed">결제완료</MenuItem>
-                  <MenuItem value="pending">결제대기</MenuItem>
-                  <MenuItem value="failed">결제실패</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={2.5}>
-              <TextField
-                fullWidth
-                label="시작일"
-                type="date"
-                value={dateRange.start}
-                onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={2.5}>
-              <TextField
-                fullWidth
-                label="종료일"
-                type="date"
-                value={dateRange.end}
-                onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+      {/* 결제 확인 다이얼로그 */}
+      <DraggableDialog
+        open={paymentDialog}
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+            setPaymentDialog(false)
+          }
+        }}
+        disableEscapeKeyDown
+        title="결제 확인"
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogContent>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            아래 내용으로 결제를 진행하시겠습니까?
+          </Alert>
 
-      {/* 결제 내역 테이블 */}
-      <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            결제 내역 목록
-          </Typography>
-
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>주문번호</TableCell>
-                  <TableCell>결제일</TableCell>
-                  <TableCell>상품명</TableCell>
-                  <TableCell>결제방법</TableCell>
-                  <TableCell align="right">금액</TableCell>
-                  <TableCell>상태</TableCell>
-                  <TableCell align="center">영수증</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center">
-                      로딩 중...
-                    </TableCell>
-                  </TableRow>
-                ) : filteredPayments.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center">
-                      검색 결과가 없습니다.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredPayments.map((payment) => (
-                    <TableRow key={payment.id} hover>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="bold">
-                          {payment.id}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>{payment.date}</TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {payment.product}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {payment.description} ({payment.period})
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          {getMethodIcon(payment.method)}
-                          <Box sx={{ ml: 1 }}>
-                            <Typography variant="body2">
-                              {getMethodText(payment.method)}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {payment.methodDetail}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="body2" fontWeight="bold">
-                          {payment.amount.toLocaleString()}원
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={getStatusText(payment.status)}
-                          color={getStatusColor(payment.status)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell align="center">
-                        {payment.receiptUrl ? (
-                          <Tooltip title="영수증 다운로드">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleDownloadReceipt(payment)}
-                            >
-                              <DownloadIcon />
-                            </IconButton>
-                          </Tooltip>
-                        ) : (
-                          <Typography variant="caption" color="text.secondary">
-                            -
-                          </Typography>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
-
-      {/* 결제 안내 */}
-      <Paper sx={{ p: 3, mt: 3, bgcolor: 'background.default' }}>
-        <Typography variant="h6" gutterBottom>
-          <ReceiptIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-          결제 안내
-        </Typography>
-        <Typography variant="body2" paragraph>
-          • 결제 완료 후 영수증은 이메일로도 발송됩니다.
-        </Typography>
-        <Typography variant="body2" paragraph>
-          • 자동결제 설정 시 매월 결제일에 자동으로 결제됩니다.
-        </Typography>
-        <Typography variant="body2" paragraph>
-          • 결제 관련 문의사항은 고객센터로 연락해주세요.
-        </Typography>
-        <Typography variant="body2">
-          • 환불 및 취소는 결제 후 7일 이내에만 가능합니다.
-        </Typography>
-      </Paper>
+          {selectedProduct && selectedTerm && (
+            <Box>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>상품:</strong> {products.find(p => p.id === selectedProduct)?.name}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>기간:</strong> {terms.find(t => t.id === selectedTerm)?.name}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>결제방법:</strong> {paymentMethods.find(m => m.id === selectedMethod)?.name}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                <strong>결제금액:</strong> {price.total.toLocaleString()}원 (부가세 포함)
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPaymentDialog(false)}>
+            취소
+          </Button>
+          <Button variant="contained" onClick={processPayment}>
+            결제 진행
+          </Button>
+        </DialogActions>
+      </DraggableDialog>
     </Box>
   )
 }

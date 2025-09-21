@@ -891,6 +891,11 @@ const HomePage = () => {
             회원 가입
           </Button>
         </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLoginDialogOpen(false)}>
+            닫기
+          </Button>
+        </DialogActions>
       </DraggableDialog>
 
       {/* 회원가입 다이얼로그 */}

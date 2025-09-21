@@ -28,6 +28,7 @@ import {
   Divider,
   Alert
 } from '@mui/material'
+import { DataGrid } from '@mui/x-data-grid'
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -272,6 +273,188 @@ const StudentPage = () => {
     (selectedClass === '' || student.class === mockClasses.find(c => c.id === selectedClass)?.name)
   )
 
+  // DataGrid 컬럼 정의
+  const columns = [
+    {
+      field: 'profileImage',
+      headerName: '프로필',
+      width: 80,
+      minWidth: 60,
+      maxWidth: 120,
+      resizable: true,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => {
+        return (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            {params.row.profileImage ? (
+              <Avatar
+                src={params.row.profileImage}
+                sx={{ width: 40, height: 40 }}
+              />
+            ) : (
+              <Avatar sx={{ width: 40, height: 40 }}>
+                {params.row.name.charAt(0)}
+              </Avatar>
+            )}
+          </Box>
+        )
+      }
+    },
+    {
+      field: 'name',
+      headerName: '이름',
+      width: 120,
+      minWidth: 80,
+      maxWidth: 200,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Typography variant="body2" fontWeight="bold" noWrap>
+            {params.value}
+          </Typography>
+        )
+      }
+    },
+    {
+      field: 'school',
+      headerName: '학교/학년',
+      width: 150,
+      minWidth: 120,
+      maxWidth: 200,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Box>
+            <Typography variant="body2" noWrap>
+              {params.value}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" noWrap>
+              {params.row.grade}학년
+            </Typography>
+          </Box>
+        )
+      }
+    },
+    {
+      field: 'department',
+      headerName: '학과',
+      width: 100,
+      minWidth: 80,
+      maxWidth: 150,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Chip label={params.value} size="small" color="secondary" />
+        )
+      }
+    },
+    {
+      field: 'class',
+      headerName: '반',
+      width: 150,
+      minWidth: 100,
+      maxWidth: 200,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Chip label={params.value} size="small" />
+        )
+      }
+    },
+    {
+      field: 'classFee',
+      headerName: '수강료',
+      width: 120,
+      minWidth: 100,
+      maxWidth: 150,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Typography variant="body2" fontWeight="bold" color="primary" noWrap>
+            {params.value ? `${params.value.toLocaleString()}원` : '-'}
+          </Typography>
+        )
+      }
+    },
+    {
+      field: 'phone',
+      headerName: '연락처',
+      width: 140,
+      minWidth: 120,
+      maxWidth: 180,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Typography variant="body2" noWrap>
+            {params.value}
+          </Typography>
+        )
+      }
+    },
+    {
+      field: 'parentPhone',
+      headerName: '학부모 연락처',
+      width: 150,
+      minWidth: 130,
+      maxWidth: 200,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Typography variant="body2" noWrap>
+            {params.value}
+          </Typography>
+        )
+      }
+    },
+    {
+      field: 'paymentDueDate',
+      headerName: '결제일',
+      width: 120,
+      minWidth: 100,
+      maxWidth: 150,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Typography variant="body2" color="text.secondary" noWrap>
+            {params.value ? `매월 ${params.value.split('-')[2]}일` : '-'}
+          </Typography>
+        )
+      }
+    },
+    {
+      field: 'actions',
+      headerName: '관리',
+      width: 120,
+      minWidth: 100,
+      maxWidth: 150,
+      resizable: true,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => {
+        return (
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <IconButton
+              size="small"
+              onClick={() => handleOpenDialog(params.row)}
+              title="수정"
+            >
+              <EditIcon />
+            </IconButton>
+            <IconButton
+              size="small"
+              color="error"
+              onClick={() => handleDelete(params.row.id)}
+              title="삭제"
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Box>
+        )
+      }
+    }
+  ]
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -327,96 +510,85 @@ const StudentPage = () => {
         </CardContent>
       </Card>
 
-      {/* 학생 목록 테이블 */}
+      {/* 학생 목록 DataGrid */}
       <Card>
         <CardContent>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>프로필</TableCell>
-                  <TableCell>이름</TableCell>
-                  <TableCell>학교/학년</TableCell>
-                  <TableCell>학과</TableCell>
-                  <TableCell>반</TableCell>
-                  <TableCell>수강료</TableCell>
-                  <TableCell>연락처</TableCell>
-                  <TableCell>학부모 연락처</TableCell>
-                  <TableCell>결제일</TableCell>
-                  <TableCell>관리</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredStudents.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={10} align="center">
-                      학생 데이터가 없습니다.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredStudents.map((student) => (
-                    <TableRow key={student.id}>
-                      <TableCell>
-                        {student.profileImage ? (
-                          <Avatar
-                            src={student.profileImage}
-                            sx={{ width: 40, height: 40 }}
-                          />
-                        ) : (
-                          <Avatar sx={{ width: 40, height: 40 }}>
-                            {student.name.charAt(0)}
-                          </Avatar>
-                        )}
-                      </TableCell>
-                      <TableCell>{student.name}</TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {student.school}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {student.grade}학년
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip label={student.department} size="small" color="secondary" />
-                      </TableCell>
-                      <TableCell>
-                        <Chip label={student.class} size="small" />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="bold" color="primary">
-                          {student.classFee ? `${student.classFee.toLocaleString()}원` : '-'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>{student.phone}</TableCell>
-                      <TableCell>{student.parentPhone}</TableCell>
-                      <TableCell>
-                        <Typography variant="body2" color="text.secondary">
-                          {student.paymentDueDate ? `매월 ${student.paymentDueDate.split('-')[2]}일` : '-'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenDialog(student)}
-                          sx={{ mr: 1 }}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDelete(student.id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <Typography variant="h6" gutterBottom>
+            학생 목록 ({filteredStudents.length}명)
+          </Typography>
+
+          <Box sx={{ height: 600, width: '100%', overflow: 'auto' }}>
+            <DataGrid
+              rows={filteredStudents}
+              columns={columns}
+              loading={false}
+              pageSizeOptions={[10, 25, 50, 100]}
+              initialState={{
+                pagination: {
+                  paginationModel: { pageSize: 25 }
+                }
+              }}
+              disableRowSelectionOnClick
+              getRowHeight={() => 60}
+              autoHeight={false}
+              // 컬럼 드래그 앤 드롭 활성화
+              disableColumnReorder={false}
+              // 컬럼 리사이징 활성화
+              disableColumnResize={false}
+              // 컬럼 메뉴 활성화
+              disableColumnMenu={false}
+              // 컬럼 필터 활성화
+              disableColumnFilter={false}
+              // 컬럼 정렬 활성화
+              disableColumnSort={false}
+              sx={{
+                minWidth: 1200,
+                '& .MuiDataGrid-cell': {
+                  display: 'flex',
+                  alignItems: 'center',
+                  whiteSpace: 'nowrap',
+                  overflow: 'visible'
+                },
+                '& .MuiDataGrid-columnHeaders': {
+                  backgroundColor: 'grey.50',
+                  fontWeight: 'bold'
+                },
+                '& .MuiDataGrid-row:hover': {
+                  backgroundColor: 'action.hover'
+                },
+                '& .MuiDataGrid-columnHeader': {
+                  whiteSpace: 'nowrap'
+                },
+                // 컬럼 경계선 스타일링
+                '& .MuiDataGrid-columnSeparator': {
+                  display: 'block',
+                  '&:hover': {
+                    color: 'primary.main'
+                  }
+                },
+                // 컬럼 헤더 드래그 가능 스타일
+                '& .MuiDataGrid-columnHeader:hover .MuiDataGrid-columnSeparator': {
+                  visibility: 'visible'
+                }
+              }}
+              localeText={{
+                noRowsLabel: '학생 데이터가 없습니다.',
+                toolbarFilters: '필터',
+                toolbarFiltersLabel: '필터 보기',
+                toolbarDensity: '행 높이',
+                toolbarDensityLabel: '행 높이',
+                toolbarDensityCompact: '좁게',
+                toolbarDensityStandard: '기본',
+                toolbarDensityComfortable: '넓게',
+                toolbarColumns: '컬럼',
+                toolbarColumnsLabel: '컬럼 선택',
+                toolbarExport: '내보내기',
+                toolbarExportLabel: '내보내기',
+                toolbarExportCSV: 'CSV 다운로드',
+                toolbarExportPrint: '인쇄'
+              }}
+            />
+          </Box>
         </CardContent>
       </Card>
 

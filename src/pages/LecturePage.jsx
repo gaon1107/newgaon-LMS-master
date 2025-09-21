@@ -25,6 +25,7 @@ import {
   Checkbox,
   ListItemText
 } from '@mui/material'
+import { DataGrid } from '@mui/x-data-grid'
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -199,15 +200,176 @@ const LecturePage = () => {
     let color = 'success'
     if (ratio > 0.8) color = 'warning'
     if (ratio >= 1) color = 'error'
-    
+
     return (
-      <Chip 
-        label={`${current}/${capacity}`} 
-        color={color} 
-        size="small" 
+      <Chip
+        label={`${current}/${capacity}`}
+        color={color}
+        size="small"
       />
     )
   }
+
+  // DataGrid 컬럼 정의
+  const columns = [
+    {
+      field: 'name',
+      headerName: '강의명',
+      width: 150,
+      minWidth: 120,
+      maxWidth: 200,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Typography variant="body2" fontWeight="bold" noWrap>
+            {params.value}
+          </Typography>
+        )
+      }
+    },
+    {
+      field: 'teacher',
+      headerName: '담당 강사',
+      width: 120,
+      minWidth: 100,
+      maxWidth: 150,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Typography variant="body2" noWrap>
+            {params.value}
+          </Typography>
+        )
+      }
+    },
+    {
+      field: 'subject',
+      headerName: '과목',
+      width: 100,
+      minWidth: 80,
+      maxWidth: 150,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Chip label={params.value} size="small" />
+        )
+      }
+    },
+    {
+      field: 'schedule',
+      headerName: '스케줄',
+      width: 180,
+      minWidth: 150,
+      maxWidth: 250,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <ScheduleIcon sx={{ mr: 1, fontSize: 16, color: 'text.secondary' }} />
+            <Typography variant="body2" noWrap>
+              {params.value}
+            </Typography>
+          </Box>
+        )
+      }
+    },
+    {
+      field: 'fee',
+      headerName: '비용',
+      width: 120,
+      minWidth: 100,
+      maxWidth: 150,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Typography variant="body2" fontWeight="bold" color="primary" noWrap>
+            {params.value ? `${params.value.toLocaleString()}원` : '-'}
+          </Typography>
+        )
+      }
+    },
+    {
+      field: 'capacity',
+      headerName: '수강 인원',
+      width: 120,
+      minWidth: 100,
+      maxWidth: 150,
+      resizable: true,
+      renderCell: (params) => {
+        return getCapacityChip(params.row.currentStudents, params.value)
+      }
+    },
+    {
+      field: 'students',
+      headerName: '수강생',
+      width: 200,
+      minWidth: 150,
+      maxWidth: 300,
+      resizable: true,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => {
+        const students = getStudentsForLecture(params.row.id)
+        return (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: '100%' }}>
+            {students.length > 0 ? (
+              students.slice(0, 3).map((student) => (
+                <Chip
+                  key={student.id}
+                  label={student.name}
+                  size="small"
+                  variant="outlined"
+                />
+              ))
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                수강생 없음
+              </Typography>
+            )}
+            {students.length > 3 && (
+              <Chip
+                label={`+${students.length - 3}`}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+            )}
+          </Box>
+        )
+      }
+    },
+    {
+      field: 'actions',
+      headerName: '관리',
+      width: 120,
+      minWidth: 100,
+      maxWidth: 150,
+      resizable: true,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => {
+        return (
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <IconButton
+              size="small"
+              onClick={() => handleOpenDialog(params.row)}
+              title="수정"
+            >
+              <EditIcon />
+            </IconButton>
+            <IconButton
+              size="small"
+              color="error"
+              onClick={() => handleDelete(params.row.id)}
+              title="삭제"
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Box>
+        )
+      }
+    }
+  ]
 
   return (
     <Box>
@@ -248,93 +410,85 @@ const LecturePage = () => {
         </CardContent>
       </Card>
 
-      {/* 강의 목록 테이블 */}
+      {/* 강의 목록 DataGrid */}
       <Card>
         <CardContent>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>강의명</TableCell>
-                  <TableCell>담당 강사</TableCell>
-                  <TableCell>과목</TableCell>
-                  <TableCell>스케줄</TableCell>
-                  <TableCell>비용</TableCell>
-                  <TableCell>수강 인원</TableCell>
-                  <TableCell>수강생</TableCell>
-                  <TableCell>관리</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center">
-                      데이터를 불러오는 중...
-                    </TableCell>
-                  </TableRow>
-                ) : filteredLectures.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center">
-                      강의 데이터가 없습니다.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredLectures.map((lecture) => (
-                    <TableRow key={lecture.id}>
-                      <TableCell>{lecture.name}</TableCell>
-                      <TableCell>{lecture.teacher}</TableCell>
-                      <TableCell>
-                        <Chip label={lecture.subject} size="small" />
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <ScheduleIcon sx={{ mr: 1, fontSize: 16, color: 'text.secondary' }} />
-                          {lecture.schedule}
-                        </Box>
-                      </TableCell>
-                      <TableCell>{lecture.fee ? `${lecture.fee.toLocaleString()}원` : '-'}</TableCell>
-                      <TableCell>
-                        {getCapacityChip(lecture.currentStudents, lecture.capacity)}
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {getStudentsForLecture(lecture.id).map((student) => (
-                            <Chip
-                              key={student.id}
-                              label={student.name}
-                              size="small"
-                              variant="outlined"
-                            />
-                          ))}
-                          {getStudentsForLecture(lecture.id).length === 0 && (
-                            <Typography variant="body2" color="text.secondary">
-                              수강생 없음
-                            </Typography>
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenDialog(lecture)}
-                          sx={{ mr: 1 }}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDelete(lecture.id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <Typography variant="h6" gutterBottom>
+            강의 목록 ({filteredLectures.length}개)
+          </Typography>
+
+          <Box sx={{ height: 600, width: '100%', overflow: 'auto' }}>
+            <DataGrid
+              rows={filteredLectures}
+              columns={columns}
+              loading={loading}
+              pageSizeOptions={[10, 25, 50, 100]}
+              initialState={{
+                pagination: {
+                  paginationModel: { pageSize: 25 }
+                }
+              }}
+              disableRowSelectionOnClick
+              getRowHeight={() => 60}
+              autoHeight={false}
+              // 컬럼 드래그 앤 드롭 활성화
+              disableColumnReorder={false}
+              // 컬럼 리사이징 활성화
+              disableColumnResize={false}
+              // 컬럼 메뉴 활성화
+              disableColumnMenu={false}
+              // 컬럼 필터 활성화
+              disableColumnFilter={false}
+              // 컬럼 정렬 활성화
+              disableColumnSort={false}
+              sx={{
+                minWidth: 1200,
+                '& .MuiDataGrid-cell': {
+                  display: 'flex',
+                  alignItems: 'center',
+                  whiteSpace: 'nowrap',
+                  overflow: 'visible'
+                },
+                '& .MuiDataGrid-columnHeaders': {
+                  backgroundColor: 'grey.50',
+                  fontWeight: 'bold'
+                },
+                '& .MuiDataGrid-row:hover': {
+                  backgroundColor: 'action.hover'
+                },
+                '& .MuiDataGrid-columnHeader': {
+                  whiteSpace: 'nowrap'
+                },
+                // 컬럼 경계선 스타일링
+                '& .MuiDataGrid-columnSeparator': {
+                  display: 'block',
+                  '&:hover': {
+                    color: 'primary.main'
+                  }
+                },
+                // 컬럼 헤더 드래그 가능 스타일
+                '& .MuiDataGrid-columnHeader:hover .MuiDataGrid-columnSeparator': {
+                  visibility: 'visible'
+                }
+              }}
+              localeText={{
+                noRowsLabel: '강의 데이터가 없습니다.',
+                toolbarFilters: '필터',
+                toolbarFiltersLabel: '필터 보기',
+                toolbarDensity: '행 높이',
+                toolbarDensityLabel: '행 높이',
+                toolbarDensityCompact: '좁게',
+                toolbarDensityStandard: '기본',
+                toolbarDensityComfortable: '넓게',
+                toolbarColumns: '컬럼',
+                toolbarColumnsLabel: '컬럼 선택',
+                toolbarExport: '내보내기',
+                toolbarExportLabel: '내보내기',
+                toolbarExportCSV: 'CSV 다운로드',
+                toolbarExportPrint: '인쇄'
+              }}
+            />
+          </Box>
         </CardContent>
       </Card>
 

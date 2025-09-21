@@ -27,6 +27,7 @@ import {
   IconButton,
   Divider
 } from '@mui/material'
+import { DataGrid } from '@mui/x-data-grid'
 import {
   Send as SendIcon,
   History as HistoryIcon,
@@ -250,6 +251,119 @@ const MessagePage = () => {
   }
 
   const messageInfo = calculateMessageInfo(messageContent)
+
+  // 메시지 기록 DataGrid 컬럼 정의
+  const historyColumns = [
+    {
+      field: 'sentAt',
+      headerName: '발송일시',
+      width: 160,
+      minWidth: 140,
+      maxWidth: 200,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Typography variant="body2" noWrap>
+            {params.value}
+          </Typography>
+        )
+      }
+    },
+    {
+      field: 'type',
+      headerName: '타입',
+      width: 100,
+      minWidth: 80,
+      maxWidth: 120,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Chip
+            label={params.value}
+            color={params.value === 'SMS' ? 'primary' : 'secondary'}
+            size="small"
+          />
+        )
+      }
+    },
+    {
+      field: 'recipients',
+      headerName: '대상',
+      width: 120,
+      minWidth: 100,
+      maxWidth: 180,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Typography variant="body2" noWrap>
+            {params.value}
+          </Typography>
+        )
+      }
+    },
+    {
+      field: 'content',
+      headerName: '내용',
+      width: 300,
+      minWidth: 200,
+      maxWidth: 500,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Typography variant="body2" noWrap sx={{ maxWidth: '100%' }} title={params.value}>
+            {params.value}
+          </Typography>
+        )
+      }
+    },
+    {
+      field: 'recipientCount',
+      headerName: '발송 수',
+      width: 100,
+      minWidth: 80,
+      maxWidth: 120,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Typography variant="body2" noWrap>
+            {params.value}명
+          </Typography>
+        )
+      }
+    },
+    {
+      field: 'cost',
+      headerName: '비용',
+      width: 120,
+      minWidth: 100,
+      maxWidth: 150,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Typography variant="body2" fontWeight="bold" color="primary" noWrap>
+            {params.value.toLocaleString()}원
+          </Typography>
+        )
+      }
+    },
+    {
+      field: 'status',
+      headerName: '상태',
+      width: 120,
+      minWidth: 100,
+      maxWidth: 150,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Chip
+            label={params.value === 'sent' ? '발송완료' : '발송실패'}
+            color={params.value === 'sent' ? 'success' : 'error'}
+            size="small"
+          />
+        )
+      }
+    }
+  ]
 
   const handleRecipientsChange = (event) => {
     setRecipients(event.target.value)
@@ -597,61 +711,81 @@ const MessagePage = () => {
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              메시지 발송 기록
+              메시지 발송 기록 ({messageHistory.length}건)
             </Typography>
-            
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>발송일시</TableCell>
-                    <TableCell>타입</TableCell>
-                    <TableCell>대상</TableCell>
-                    <TableCell>내용</TableCell>
-                    <TableCell>발송 수</TableCell>
-                    <TableCell>비용</TableCell>
-                    <TableCell>상태</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {messageHistory.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} align="center">
-                        발송 기록이 없습니다.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    messageHistory.map((message) => (
-                      <TableRow key={message.id}>
-                        <TableCell>{message.sentAt}</TableCell>
-                        <TableCell>
-                          <Chip 
-                            label={message.type} 
-                            color={message.type === 'SMS' ? 'primary' : 'secondary'}
-                            size="small" 
-                          />
-                        </TableCell>
-                        <TableCell>{message.recipients}</TableCell>
-                        <TableCell>
-                          <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
-                            {message.content}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>{message.recipientCount}명</TableCell>
-                        <TableCell>{message.cost.toLocaleString()}원</TableCell>
-                        <TableCell>
-                          <Chip 
-                            label={message.status === 'sent' ? '발송완료' : '발송실패'} 
-                            color={message.status === 'sent' ? 'success' : 'error'}
-                            size="small" 
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+
+            <Box sx={{ height: 600, width: '100%', overflow: 'auto' }}>
+              <DataGrid
+                rows={messageHistory}
+                columns={historyColumns}
+                loading={false}
+                pageSizeOptions={[10, 25, 50, 100]}
+                initialState={{
+                  pagination: {
+                    paginationModel: { pageSize: 25 }
+                  }
+                }}
+                disableRowSelectionOnClick
+                getRowHeight={() => 60}
+                autoHeight={false}
+                // 컬럼 드래그 앤 드롭 활성화
+                disableColumnReorder={false}
+                // 컬럼 리사이징 활성화
+                disableColumnResize={false}
+                // 컬럼 메뉴 활성화
+                disableColumnMenu={false}
+                // 컬럼 필터 활성화
+                disableColumnFilter={false}
+                // 컬럼 정렬 활성화
+                disableColumnSort={false}
+                sx={{
+                  minWidth: 1000,
+                  '& .MuiDataGrid-cell': {
+                    display: 'flex',
+                    alignItems: 'center',
+                    whiteSpace: 'nowrap',
+                    overflow: 'visible'
+                  },
+                  '& .MuiDataGrid-columnHeaders': {
+                    backgroundColor: 'grey.50',
+                    fontWeight: 'bold'
+                  },
+                  '& .MuiDataGrid-row:hover': {
+                    backgroundColor: 'action.hover'
+                  },
+                  '& .MuiDataGrid-columnHeader': {
+                    whiteSpace: 'nowrap'
+                  },
+                  // 컬럼 경계선 스타일링
+                  '& .MuiDataGrid-columnSeparator': {
+                    display: 'block',
+                    '&:hover': {
+                      color: 'primary.main'
+                    }
+                  },
+                  // 컬럼 헤더 드래그 가능 스타일
+                  '& .MuiDataGrid-columnHeader:hover .MuiDataGrid-columnSeparator': {
+                    visibility: 'visible'
+                  }
+                }}
+                localeText={{
+                  noRowsLabel: '발송 기록이 없습니다.',
+                  toolbarFilters: '필터',
+                  toolbarFiltersLabel: '필터 보기',
+                  toolbarDensity: '행 높이',
+                  toolbarDensityLabel: '행 높이',
+                  toolbarDensityCompact: '좁게',
+                  toolbarDensityStandard: '기본',
+                  toolbarDensityComfortable: '넓게',
+                  toolbarColumns: '컬럼',
+                  toolbarColumnsLabel: '컬럼 선택',
+                  toolbarExport: '내보내기',
+                  toolbarExportLabel: '내보내기',
+                  toolbarExportCSV: 'CSV 다운로드',
+                  toolbarExportPrint: '인쇄'
+                }}
+              />
+            </Box>
           </CardContent>
         </Card>
       )}

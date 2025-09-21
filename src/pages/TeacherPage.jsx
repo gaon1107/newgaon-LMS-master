@@ -19,6 +19,7 @@ import {
   Chip,
   Avatar
 } from '@mui/material'
+import { DataGrid } from '@mui/x-data-grid'
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -161,6 +162,141 @@ const TeacherPage = () => {
     teacher.subjects.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  // DataGrid 컬럼 정의
+  const columns = [
+    {
+      field: 'profileImage',
+      headerName: '프로필',
+      width: 80,
+      minWidth: 60,
+      maxWidth: 120,
+      resizable: true,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => {
+        return (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <Avatar sx={{ width: 40, height: 40 }}>
+              {params.row.name.charAt(0)}
+            </Avatar>
+          </Box>
+        )
+      }
+    },
+    {
+      field: 'name',
+      headerName: '이름',
+      width: 120,
+      minWidth: 80,
+      maxWidth: 200,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Typography variant="body2" fontWeight="bold" noWrap>
+            {params.value}
+          </Typography>
+        )
+      }
+    },
+    {
+      field: 'subjects',
+      headerName: '담당 과목',
+      width: 200,
+      minWidth: 150,
+      maxWidth: 300,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            {params.value.split(',').map((subject, index) => (
+              <Chip
+                key={index}
+                label={subject.trim()}
+                size="small"
+              />
+            ))}
+          </Box>
+        )
+      }
+    },
+    {
+      field: 'experience',
+      headerName: '경력',
+      width: 100,
+      minWidth: 80,
+      maxWidth: 150,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Typography variant="body2" noWrap>
+            {params.value}
+          </Typography>
+        )
+      }
+    },
+    {
+      field: 'phone',
+      headerName: '연락처',
+      width: 140,
+      minWidth: 120,
+      maxWidth: 180,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Typography variant="body2" noWrap>
+            {params.value}
+          </Typography>
+        )
+      }
+    },
+    {
+      field: 'email',
+      headerName: '이메일',
+      width: 180,
+      minWidth: 150,
+      maxWidth: 250,
+      resizable: true,
+      renderCell: (params) => {
+        return (
+          <Typography variant="body2" noWrap>
+            {params.value}
+          </Typography>
+        )
+      }
+    },
+    {
+      field: 'actions',
+      headerName: '관리',
+      width: 120,
+      minWidth: 100,
+      maxWidth: 150,
+      resizable: true,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => {
+        return (
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <IconButton
+              size="small"
+              onClick={() => handleOpenDialog(params.row)}
+              title="수정"
+            >
+              <EditIcon />
+            </IconButton>
+            <IconButton
+              size="small"
+              color="error"
+              onClick={() => handleDelete(params.row.id)}
+              title="삭제"
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Box>
+        )
+      }
+    }
+  ]
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -200,79 +336,85 @@ const TeacherPage = () => {
         </CardContent>
       </Card>
 
-      {/* 강사 목록 테이블 */}
+      {/* 강사 목록 DataGrid */}
       <Card>
         <CardContent>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>프로필</TableCell>
-                  <TableCell>이름</TableCell>
-                  <TableCell>담당 과목</TableCell>
-                  <TableCell>경력</TableCell>
-                  <TableCell>연락처</TableCell>
-                  <TableCell>이메일</TableCell>
-                  <TableCell>관리</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center">
-                      데이터를 불러오는 중...
-                    </TableCell>
-                  </TableRow>
-                ) : filteredTeachers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center">
-                      강사 데이터가 없습니다.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredTeachers.map((teacher) => (
-                    <TableRow key={teacher.id}>
-                      <TableCell>
-                        <Avatar sx={{ width: 40, height: 40 }}>
-                          {teacher.name.charAt(0)}
-                        </Avatar>
-                      </TableCell>
-                      <TableCell>{teacher.name}</TableCell>
-                      <TableCell>
-                        {teacher.subjects.split(',').map((subject, index) => (
-                          <Chip 
-                            key={index} 
-                            label={subject.trim()} 
-                            size="small" 
-                            sx={{ mr: 0.5, mb: 0.5 }}
-                          />
-                        ))}
-                      </TableCell>
-                      <TableCell>{teacher.experience}</TableCell>
-                      <TableCell>{teacher.phone}</TableCell>
-                      <TableCell>{teacher.email}</TableCell>
-                      <TableCell>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenDialog(teacher)}
-                          sx={{ mr: 1 }}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDelete(teacher.id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <Typography variant="h6" gutterBottom>
+            강사 목록 ({filteredTeachers.length}명)
+          </Typography>
+
+          <Box sx={{ height: 600, width: '100%', overflow: 'auto' }}>
+            <DataGrid
+              rows={filteredTeachers}
+              columns={columns}
+              loading={loading}
+              pageSizeOptions={[10, 25, 50, 100]}
+              initialState={{
+                pagination: {
+                  paginationModel: { pageSize: 25 }
+                }
+              }}
+              disableRowSelectionOnClick
+              getRowHeight={() => 60}
+              autoHeight={false}
+              // 컬럼 드래그 앤 드롭 활성화
+              disableColumnReorder={false}
+              // 컬럼 리사이징 활성화
+              disableColumnResize={false}
+              // 컬럼 메뉴 활성화
+              disableColumnMenu={false}
+              // 컬럼 필터 활성화
+              disableColumnFilter={false}
+              // 컬럼 정렬 활성화
+              disableColumnSort={false}
+              sx={{
+                minWidth: 1000,
+                '& .MuiDataGrid-cell': {
+                  display: 'flex',
+                  alignItems: 'center',
+                  whiteSpace: 'nowrap',
+                  overflow: 'visible'
+                },
+                '& .MuiDataGrid-columnHeaders': {
+                  backgroundColor: 'grey.50',
+                  fontWeight: 'bold'
+                },
+                '& .MuiDataGrid-row:hover': {
+                  backgroundColor: 'action.hover'
+                },
+                '& .MuiDataGrid-columnHeader': {
+                  whiteSpace: 'nowrap'
+                },
+                // 컬럼 경계선 스타일링
+                '& .MuiDataGrid-columnSeparator': {
+                  display: 'block',
+                  '&:hover': {
+                    color: 'primary.main'
+                  }
+                },
+                // 컬럼 헤더 드래그 가능 스타일
+                '& .MuiDataGrid-columnHeader:hover .MuiDataGrid-columnSeparator': {
+                  visibility: 'visible'
+                }
+              }}
+              localeText={{
+                noRowsLabel: '강사 데이터가 없습니다.',
+                toolbarFilters: '필터',
+                toolbarFiltersLabel: '필터 보기',
+                toolbarDensity: '행 높이',
+                toolbarDensityLabel: '행 높이',
+                toolbarDensityCompact: '좁게',
+                toolbarDensityStandard: '기본',
+                toolbarDensityComfortable: '넓게',
+                toolbarColumns: '컬럼',
+                toolbarColumnsLabel: '컬럼 선택',
+                toolbarExport: '내보내기',
+                toolbarExportLabel: '내보내기',
+                toolbarExportCSV: 'CSV 다운로드',
+                toolbarExportPrint: '인쇄'
+              }}
+            />
+          </Box>
         </CardContent>
       </Card>
 

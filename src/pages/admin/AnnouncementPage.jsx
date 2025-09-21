@@ -149,7 +149,8 @@ const AnnouncementPage = () => {
         content: '',
         category: 'general',
         priority: 'normal',
-        isActive: true
+        isActive: true,
+        attachments: []
       })
     }
     setEditMode(edit)
@@ -400,14 +401,6 @@ const AnnouncementPage = () => {
                       />
                     </TableCell>
                     <TableCell>
-                      <Tooltip title="상세보기">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenDialog(announcement, false)}
-                        >
-                          <ViewIcon />
-                        </IconButton>
-                      </Tooltip>
                       <Tooltip title="수정">
                         <IconButton
                           size="small"
