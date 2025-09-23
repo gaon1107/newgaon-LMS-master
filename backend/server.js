@@ -78,12 +78,12 @@ app.use('/api/students', require('./routes/students'));
 app.use('/api/instructors', require('./routes/instructors'));
 app.use('/api/lectures', require('./routes/lectures'));
 
-// 추후 구현 예정
-// app.use('/api/attendance', require('./routes/attendance'));
-// app.use('/api/messages', require('./routes/messages'));
-// app.use('/api/files', require('./routes/files'));
-// app.use('/api/dashboard', require('./routes/dashboard'));
-// app.use('/api/announcements', require('./routes/announcements'));
+// API 라우터 연결 (추가 구현 완료)
+app.use('/api/attendance', require('./routes/attendance'));
+app.use('/api/messages', require('./routes/messages'));
+app.use('/api/files', require('./routes/files'));
+app.use('/api/dashboard', require('./routes/dashboard'));
+// app.use('/api/announcements', require('./routes/announcements')); // 추후 구현 예정
 
 // 404 핸들러
 app.use('*', (req, res) => {
