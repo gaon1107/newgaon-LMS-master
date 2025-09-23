@@ -75,10 +75,10 @@ app.get('/health', async (req, res) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api', require('./routes/auth')); // /api/user 엔드포인트를 위해
 app.use('/api/students', require('./routes/students'));
+app.use('/api/instructors', require('./routes/instructors'));
+app.use('/api/lectures', require('./routes/lectures'));
 
 // 추후 구현 예정
-// app.use('/api/teachers', require('./routes/teachers'));
-// app.use('/api/lectures', require('./routes/lectures'));
 // app.use('/api/attendance', require('./routes/attendance'));
 // app.use('/api/messages', require('./routes/messages'));
 // app.use('/api/files', require('./routes/files'));

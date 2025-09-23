@@ -10,7 +10,7 @@ export default defineConfig({
     host: true, // 외부 접근 허용
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5002',
         changeOrigin: true,
         secure: false
       }
