@@ -81,7 +81,7 @@ class LmsApiService {
 
           return ApiResponse.createSuccess(
             message: '로그인 성공',
-            data: data,
+            data: data is Map<String, dynamic> ? data : Map<String, dynamic>.from(data),
           );
         } else {
           return ApiResponse.error(

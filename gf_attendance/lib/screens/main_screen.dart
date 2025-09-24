@@ -28,7 +28,7 @@ class _MainScreenState extends State<MainScreen> {
 
     // 오늘 날짜의 출결 데이터와 학생 목록 로드
     await Future.wait([
-      attendanceService.fetchAttendanceList(date: DateTime.now()),
+      attendanceService.fetchStateList(date: DateTime.now()),
       attendanceService.fetchStudentList(),
     ]);
   }
@@ -375,7 +375,7 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                 ),
                 subtitle: Text(
-                  '${attendance.stateDescription} • ${_formatTime(attendance.createdAt)}',
+                  '${attendance.stateDescription} • ${_formatTime(attendance.createdAt ?? DateTime.now())}',
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: const Color(AppConstants.textSecondaryColor),

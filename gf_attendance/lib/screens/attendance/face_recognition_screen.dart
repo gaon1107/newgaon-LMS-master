@@ -227,7 +227,7 @@ class _FaceRecognitionScreenState extends State<FaceRecognitionScreen>
           state: provider.currentAttendanceState,
           isKeypad: false,
           recognizeLog: '$faceId:$similarity',
-          thumbnail: imageBytes,
+          thumbnailBytes: imageBytes,
         );
 
         if (success) {

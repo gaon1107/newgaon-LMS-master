@@ -267,4 +267,87 @@ class AuthService extends ChangeNotifier {
       return await refreshAccessToken();
     }
   }
+
+  // LmsApiService에서 사용하는 메서드들
+
+  // 저장된 설정 정보 반환
+  Future<Map<String, String>?> getStoredConfig() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lmsBaseUrl = prefs.getString('lmsBaseUrl');
+      final branchId = prefs.getString('branchId');
+
+      if (lmsBaseUrl != null) {
+        return {
+          'lmsBaseUrl': lmsBaseUrl,
+          if (branchId != null) 'branchId': branchId,
+        };
+      }
+      return null;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Get stored config error: $e');
+      }
+      return null;
+    }
+  }
+
+  // 토큰 저장 (LmsApiService용)
+  Future<void> saveToken(String token) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('lms_access_token', token);
+      _accessToken = token;
+      notifyListeners();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Save token error: $e');
+      }
+    }
+  }
+
+  // 리프레시 토큰 반환
+  Future<String?> getRefreshToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('lms_refresh_token') ?? _refreshToken;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Get refresh token error: $e');
+      }
+      return _refreshToken;
+    }
+  }
+
+  // 토큰들 삭제 (LmsApiService용)
+  Future<void> clearTokens() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('lms_access_token');
+      await prefs.remove('lms_refresh_token');
+      notifyListeners();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Clear tokens error: $e');
+      }
+    }
+  }
+
+  // 설정 정보 저장
+  Future<void> saveConfig({
+    required String lmsBaseUrl,
+    String? branchId,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('lmsBaseUrl', lmsBaseUrl);
+      if (branchId != null) {
+        await prefs.setString('branchId', branchId);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Save config error: $e');
+      }
+    }
+  }
 }

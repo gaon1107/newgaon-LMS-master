@@ -33,22 +33,22 @@ class AppRoutes {
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
-      case splash:
+      case '/':
         return MaterialPageRoute(builder: (context) => const SplashScreen());
-      case login:
+      case '/login':
         return MaterialPageRoute(builder: (context) => const LoginScreen());
-      case main:
+      case '/main':
         return MaterialPageRoute(builder: (context) => const MainScreen());
-      case studentList:
+      case '/student-list':
         return MaterialPageRoute(builder: (context) => const StudentListScreen());
-      case attendanceMethod:
+      case '/attendance-method':
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
           builder: (context) => AttendanceMethodScreen(
             selectedStudent: args?['selectedStudent'],
           ),
         );
-      case faceRecognition:
+      case '/face_recognition':
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
           builder: (context) => FaceRecognitionScreen(
@@ -56,9 +56,9 @@ class AppRoutes {
             selectedStudent: args?['selectedStudent'],
           ),
         );
-      case attendanceHistory:
+      case '/attendance-history':
         return MaterialPageRoute(builder: (context) => const AttendanceHistoryScreen());
-      case settings:
+      case '/settings':
         return MaterialPageRoute(builder: (context) => const SettingsScreen());
       default:
         return MaterialPageRoute(

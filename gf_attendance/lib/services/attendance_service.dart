@@ -410,6 +410,9 @@ class AttendanceService extends ChangeNotifier {
     }).toList();
   }
 
+  // AttendanceSummaryCard에서 사용하는 메서드 (별칭)
+  List<StateModel> getTodayAttendance() => getTodayStates();
+
   // 실시간 출결 현황 조회
   Future<void> fetchRecentStates({int limit = 10}) async {
     _setLoading(true);
