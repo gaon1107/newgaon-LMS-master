@@ -81,7 +81,7 @@ class _AttendanceMethodScreenState extends State<AttendanceMethodScreen> {
                 if (widget.mode == null) ...[
                   _buildMethodSelectionSection(),
                 ] else if (widget.mode == 'face_recognition') ...[
-                  _buildFaceRecognitionSection(provider),
+                  _buildFaceRecognitionRedirectSection(provider),
                 ] else if (widget.mode == 'keypad') ...[
                   _buildKeypadSection(provider),
                 ],
@@ -246,7 +246,7 @@ class _AttendanceMethodScreenState extends State<AttendanceMethodScreen> {
                 Icons.face_retouching_natural,
                 const Color(AppConstants.primaryColorValue),
                 '카메라를 통한\n얼굴 인식',
-                () => _startFaceRecognition(),
+                () => _navigateToFaceRecognition(),
               ),
             ),
             SizedBox(width: 16.w),
@@ -318,7 +318,7 @@ class _AttendanceMethodScreenState extends State<AttendanceMethodScreen> {
     );
   }
 
-  Widget _buildFaceRecognitionSection(AttendanceProvider provider) {
+  Widget _buildFaceRecognitionRedirectSection(AttendanceProvider provider) {
     return Column(
       children: [
         Text(
@@ -332,32 +332,42 @@ class _AttendanceMethodScreenState extends State<AttendanceMethodScreen> {
         ),
         SizedBox(height: 24.h),
 
-        // 카메라 프리뷰 영역 (미구현)
+        // 안내 메시지
         Container(
           width: double.infinity,
-          height: 300.h,
+          padding: EdgeInsets.all(20.w),
           decoration: BoxDecoration(
-            color: Colors.grey[200],
+            color: const Color(AppConstants.primaryColorValue).withOpacity(0.1),
             borderRadius: BorderRadius.circular(16.r),
             border: Border.all(
-              color: Colors.grey[300]!,
+              color: const Color(AppConstants.primaryColorValue).withOpacity(0.3),
               width: 2,
             ),
           ),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.camera_alt_outlined,
+                Icons.face_retouching_natural,
                 size: 64.sp,
-                color: Colors.grey[400],
+                color: const Color(AppConstants.primaryColorValue),
               ),
               SizedBox(height: 16.h),
               Text(
-                '카메라 기능은\n추후 구현 예정입니다',
+                '전면 카메라를 사용하여\n얼굴인식 출결을 진행합니다',
                 style: TextStyle(
                   fontSize: 16.sp,
-                  color: Colors.grey[600],
+                  color: const Color(AppConstants.textPrimaryColor),
+                  fontFamily: 'NotoSans',
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                '현재 출결 모드: ${provider.currentStateText}',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: const Color(AppConstants.primaryColorValue),
+                  fontWeight: FontWeight.w600,
                   fontFamily: 'NotoSans',
                 ),
                 textAlign: TextAlign.center,
@@ -368,33 +378,29 @@ class _AttendanceMethodScreenState extends State<AttendanceMethodScreen> {
 
         SizedBox(height: 24.h),
 
-        if (_isRecognizing) ...[
-          const LoadingWidget(message: '얼굴을 인식하는 중...'),
-        ] else ...[
-          SizedBox(
-            width: double.infinity,
-            height: 48.h,
-            child: ElevatedButton.icon(
-              onPressed: _startFaceRecognition,
-              icon: Icon(Icons.face_retouching_natural, size: 20.sp),
-              label: Text(
-                '얼굴인식 시작',
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'NotoSans',
-                ),
+        SizedBox(
+          width: double.infinity,
+          height: 48.h,
+          child: ElevatedButton.icon(
+            onPressed: _navigateToFaceRecognition,
+            icon: Icon(Icons.camera_alt, size: 20.sp),
+            label: Text(
+              '얼굴인식 화면으로 이동',
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'NotoSans',
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(AppConstants.primaryColorValue),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(AppConstants.primaryColorValue),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.r),
               ),
             ),
           ),
-        ],
+        ),
       ],
     );
   }
@@ -581,27 +587,14 @@ class _AttendanceMethodScreenState extends State<AttendanceMethodScreen> {
     );
   }
 
-  void _startFaceRecognition() {
-    setState(() {
-      _isRecognizing = true;
-    });
-
-    // TODO: 실제 얼굴인식 기능 구현
-    // 현재는 데모용으로 3초 후 완료 처리
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() {
-          _isRecognizing = false;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('얼굴인식 기능은 추후 구현 예정입니다.'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
-    });
+  void _navigateToFaceRecognition() {
+    Navigator.of(context).pushNamed(
+      '/face_recognition',
+      arguments: {
+        'mode': widget.mode,
+        'selectedStudent': widget.selectedStudent,
+      },
+    );
   }
 
   void _showKeypadDialog() {

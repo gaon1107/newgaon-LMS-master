@@ -4,6 +4,7 @@ import '../screens/login_screen.dart';
 import '../screens/main_screen.dart';
 import '../screens/attendance/student_list_screen.dart';
 import '../screens/attendance/attendance_method_screen.dart';
+import '../screens/attendance/face_recognition_screen.dart';
 import '../screens/history/attendance_history_screen.dart';
 import '../screens/settings/settings_screen.dart';
 
@@ -13,6 +14,7 @@ class AppRoutes {
   static const String main = '/main';
   static const String studentList = '/student-list';
   static const String attendanceMethod = '/attendance-method';
+  static const String faceRecognition = '/face_recognition';
   static const String attendanceHistory = '/attendance-history';
   static const String settings = '/settings';
 
@@ -23,6 +25,7 @@ class AppRoutes {
       main: (context) => const MainScreen(),
       studentList: (context) => const StudentListScreen(),
       attendanceMethod: (context) => const AttendanceMethodScreen(),
+      faceRecognition: (context) => const FaceRecognitionScreen(),
       attendanceHistory: (context) => const AttendanceHistoryScreen(),
       settings: (context) => const SettingsScreen(),
     };
@@ -42,6 +45,14 @@ class AppRoutes {
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
           builder: (context) => AttendanceMethodScreen(
+            selectedStudent: args?['selectedStudent'],
+          ),
+        );
+      case faceRecognition:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (context) => FaceRecognitionScreen(
+            mode: args?['mode'],
             selectedStudent: args?['selectedStudent'],
           ),
         );

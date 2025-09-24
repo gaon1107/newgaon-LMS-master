@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
+import 'dart:convert';
 import 'api_service.dart';
 import '../models/state_model.dart';
 import '../models/student_model.dart';
@@ -68,13 +70,15 @@ class AttendanceService extends ChangeNotifier {
     bool isKeypad = false,
     String? deviceId,
     String? thumbnail,
+    String? recognizeLog,
     String? comment,
+    Uint8List? thumbnailBytes,
   }) async {
     _setLoading(true);
     _clearError();
 
     try {
-      final data = {
+      final data = <String, dynamic>{
         'studentId': studentId,
         'state': state,
         'taggedAt': DateTime.now().toIso8601String(),
@@ -82,12 +86,26 @@ class AttendanceService extends ChangeNotifier {
         'deviceId': deviceId ?? 'flutter_app',
         'appId': AppConstants.packageName,
         'appVersion': AppConstants.appVersion,
-        'thumbnail': thumbnail,
-        'comment': comment,
         'isForced': false,
         'isModified': false,
         'isDelayed': false,
       };
+
+      // 썸네일 이미지 처리
+      if (thumbnailBytes != null) {
+        data['thumbnail'] = base64Encode(thumbnailBytes);
+      } else if (thumbnail != null) {
+        data['thumbnail'] = thumbnail;
+      }
+
+      // 얼굴인식 로그 추가
+      if (recognizeLog != null) {
+        data['recognizeLog'] = recognizeLog;
+      }
+
+      if (comment != null) {
+        data['comment'] = comment;
+      }
 
       final response = await _apiService.post(
         AppConstants.stateEndpoint,
@@ -298,6 +316,34 @@ class AttendanceService extends ChangeNotifier {
       _setError('학생 검색 중 오류가 발생했습니다: $e');
       if (kDebugMode) {
         print('Find student by identifier error: $e');
+      }
+      return null;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Face ID로 학생 검색
+  Future<StudentModel?> findStudentByFaceId(String faceId) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      final response = await _apiService.get(
+        '${AppConstants.studentEndpoint}/search',
+        queryParameters: {
+          'faceId': faceId,
+        },
+      );
+
+      if (response['data'] != null) {
+        return StudentModel.fromJson(response['data']);
+      }
+      return null;
+    } catch (e) {
+      _setError('Face ID로 학생 검색 중 오류가 발생했습니다: $e');
+      if (kDebugMode) {
+        print('Find student by face ID error: $e');
       }
       return null;
     } finally {

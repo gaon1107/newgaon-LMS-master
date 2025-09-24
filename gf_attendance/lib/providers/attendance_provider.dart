@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
 import '../models/state_model.dart';
 import '../models/student_model.dart';
 import '../services/attendance_service.dart';
+import '../services/gaon_face_service.dart';
 import '../utils/app_constants.dart';
 
 class AttendanceProvider extends ChangeNotifier {
@@ -124,7 +126,9 @@ class AttendanceProvider extends ChangeNotifier {
     required int state,
     bool isKeypad = false,
     String? thumbnail,
+    String? recognizeLog,
     String? comment,
+    Uint8List? thumbnailBytes,
   }) async {
     _setLoading(true);
     _clearError();
@@ -135,7 +139,9 @@ class AttendanceProvider extends ChangeNotifier {
         state: state,
         isKeypad: isKeypad,
         thumbnail: thumbnail,
+        recognizeLog: recognizeLog,
         comment: comment,
+        thumbnailBytes: thumbnailBytes,
       );
 
       if (newState != null) {
@@ -153,16 +159,28 @@ class AttendanceProvider extends ChangeNotifier {
     }
   }
 
+  // Face ID로 학생 찾기
+  Future<StudentModel?> findStudentByFaceId(String faceId) async {
+    try {
+      return await _attendanceService.findStudentByFaceId(faceId);
+    } catch (e) {
+      _setError('Face ID로 학생 검색 실패: $e');
+      return null;
+    }
+  }
+
   // 얼굴인식으로 출결 처리
   Future<bool> recordAttendanceByFace({
     required String studentIdentifier,
     required int state,
     String? thumbnail,
+    String? recognizeLog,
     double? confidence,
+    Uint8List? thumbnailBytes,
   }) async {
     try {
       // 학생 검색
-      final student = await _attendanceService.findStudentByIdentifier(studentIdentifier);
+      final student = await _attendanceService.findStudentByFaceId(studentIdentifier);
 
       if (student == null) {
         _setError('학생을 찾을 수 없습니다.');
@@ -178,6 +196,8 @@ class AttendanceProvider extends ChangeNotifier {
         state: state,
         isKeypad: false,
         thumbnail: thumbnail,
+        recognizeLog: recognizeLog,
+        thumbnailBytes: thumbnailBytes,
         comment: confidence != null ? 'Face recognition confidence: ${(confidence * 100).toStringAsFixed(1)}%' : null,
       );
     } catch (e) {
